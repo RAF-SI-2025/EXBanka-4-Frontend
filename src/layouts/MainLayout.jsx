@@ -4,7 +4,7 @@ import Footer from '../components/Footer'
 
 function MainLayout() {
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-slate-900">
       <Navbar />
       <main className="flex-1 container mx-auto px-6 py-16 max-w-7xl">
         <Outlet />

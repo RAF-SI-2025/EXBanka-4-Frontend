@@ -2,26 +2,16 @@ import { Link } from 'react-router-dom'
 
 function Footer() {
   return (
-    <footer className="bg-slate-950 border-t border-white/5">
+    <footer className="bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
       <div className="container mx-auto px-6 max-w-7xl py-10">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          {/* Brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 border border-amber-500 flex items-center justify-center">
-              <span className="text-amber-500 text-xs font-serif">A</span>
-            </div>
-            <span className="text-white font-serif text-base tracking-widest font-light">
-              Anka<span className="text-amber-400">Banka</span>
-            </span>
-          </div>
-
           {/* Links */}
           <div className="flex items-center gap-8">
-            {['Home', 'About', 'Login'].map((label) => (
+            {['Home', 'Login'].map((label) => (
               <Link
                 key={label}
                 to={label === 'Home' ? '/' : `/${label.toLowerCase()}`}
-                className="text-xs tracking-widest uppercase text-slate-500 hover:text-amber-400 transition-colors duration-150"
+                className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors duration-150"
               >
                 {label}
               </Link>
@@ -29,11 +19,10 @@ function Footer() {
           </div>
 
           {/* Copyright */}
-          <p className="text-slate-500 text-xs tracking-wide">
+          <p className="text-slate-500 dark:text-slate-400 text-xs tracking-wide">
             &copy; {new Date().getFullYear()} AnkaBanka
           </p>
         </div>
-
       </div>
     </footer>
   )

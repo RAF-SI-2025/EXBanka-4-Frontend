@@ -31,32 +31,32 @@ function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-6 py-16">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center px-6 py-16">
       {/* Logo */}
       <Link to="/" className="flex items-center gap-3 mb-14">
-        <div className="w-7 h-7 border border-amber-500 flex items-center justify-center">
-          <span className="text-amber-500 text-xs font-serif font-semibold">A</span>
+        <div className="w-7 h-7 border border-violet-500 dark:border-violet-400 flex items-center justify-center">
+          <span className="text-violet-500 dark:text-violet-400 text-xs font-serif font-semibold">A</span>
         </div>
-        <span className="text-white font-serif text-lg tracking-widest font-light">
-          Anka<span className="text-amber-400">Banka</span>
+        <span className="text-slate-900 dark:text-white font-serif text-lg tracking-widest font-light">
+          Anka<span className="text-violet-600 dark:text-violet-400">Banka</span>
         </span>
       </Link>
 
       <div className="w-full max-w-md">
         {sent ? (
           <div className="text-center">
-            <div className="w-14 h-14 border border-amber-500 flex items-center justify-center mx-auto mb-8">
-              <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-14 h-14 border border-violet-500 dark:border-violet-400 flex items-center justify-center mx-auto mb-8">
+              <svg className="w-6 h-6 text-violet-500 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-xs tracking-widest uppercase text-amber-500 mb-4">Email Sent</p>
-            <h1 className="font-serif text-4xl font-light text-white mb-3">Check Your Inbox</h1>
-            <div className="w-10 h-px bg-amber-500 mx-auto mb-6" />
-            <p className="text-slate-400 font-light leading-relaxed mb-10">
+            <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-4">Email Sent</p>
+            <h1 className="font-serif text-4xl font-light text-slate-900 dark:text-white mb-3">Check Your Inbox</h1>
+            <div className="w-10 h-px bg-violet-500 mx-auto mb-6" />
+            <p className="text-slate-500 dark:text-slate-400 font-light leading-relaxed mb-10">
               If an account exists for{' '}
-              <span className="text-white">{email}</span>, you will receive a password reset link
-              within a few minutes.
+              <span className="text-slate-900 dark:text-white font-medium">{email}</span>, you will receive a
+              password reset link within a few minutes.
             </p>
             <Link to="/login" className="btn-primary">
               Return to Sign In
@@ -65,48 +65,49 @@ function ForgotPasswordPage() {
         ) : (
           <>
             <div className="text-center mb-10">
-              <p className="text-xs tracking-widest uppercase text-amber-500 mb-4">Account Recovery</p>
-              <h1 className="font-serif text-4xl font-light text-white mb-3">Reset Password</h1>
-              <div className="w-10 h-px bg-amber-500 mx-auto mb-6" />
-              <p className="text-slate-400 font-light text-sm leading-relaxed">
+              <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-4">Account Recovery</p>
+              <h1 className="font-serif text-4xl font-light text-slate-900 dark:text-white mb-3">Reset Password</h1>
+              <div className="w-10 h-px bg-violet-500 dark:bg-violet-400 mx-auto mb-6" />
+              <p className="text-slate-500 dark:text-slate-400 font-light text-sm leading-relaxed">
                 Enter the email address associated with your account and we will send you a secure
                 reset link.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate className="space-y-6">
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-xs tracking-widest uppercase text-slate-400 mb-2"
-                >
-                  Email Address
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onBlur={() => setTouched(true)}
-                  placeholder="employee@exbanka.com"
-                  className={`input-field bg-slate-900 text-white placeholder-slate-600 ${showError ? 'input-error' : ''}`}
-                  style={{ borderColor: showError ? undefined : 'rgba(255,255,255,0.1)' }}
-                />
-                {showError && (
-                  <p className="mt-2 text-xs text-red-400">{emailError}</p>
-                )}
-              </div>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-8 shadow-sm">
+              <form onSubmit={handleSubmit} noValidate className="space-y-6">
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-xs tracking-widest uppercase text-slate-600 dark:text-slate-400 mb-2"
+                  >
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => setTouched(true)}
+                    placeholder="employee@ankabanka.com"
+                    className={`input-field ${showError ? 'input-error' : ''}`}
+                  />
+                  {showError && (
+                    <p className="mt-2 text-xs text-red-500">{emailError}</p>
+                  )}
+                </div>
 
-              <button type="submit" className="btn-primary w-full">
-                Send Reset Link
-              </button>
-            </form>
+                <button type="submit" className="btn-primary w-full">
+                  Send Reset Link
+                </button>
+              </form>
+            </div>
 
             <div className="text-center mt-8">
               <Link
                 to="/login"
-                className="text-xs tracking-widest uppercase text-slate-500 hover:text-amber-400 transition-colors inline-flex items-center gap-2"
+                className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors inline-flex items-center gap-2"
               >
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />

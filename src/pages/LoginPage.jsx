@@ -50,32 +50,29 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
-      {/* Right panel — form */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-16">
-        {/* Mobile logo */}
-        <Link to="/" className="flex items-center gap-3 mb-12 lg:hidden">
-          <div className="w-7 h-7 border border-amber-500 flex items-center justify-center">
-            <span className="text-amber-500 text-xs font-serif font-semibold">A</span>
-          </div>
-          <span className="text-white font-serif text-lg tracking-widest font-light">
-            Anka<span className="text-amber-400">Banka</span>
-          </span>
-        </Link>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-6 py-16">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-10">
+          <Link to="/" className="inline-flex items-center gap-3 mb-8">
+            <div className="w-7 h-7 border border-violet-500 dark:border-violet-400 flex items-center justify-center">
+              <span className="text-violet-500 dark:text-violet-400 text-xs font-serif font-semibold">A</span>
+            </div>
+            <span className="text-slate-900 dark:text-white font-serif text-lg tracking-widest font-light">
+              Anka<span className="text-violet-600 dark:text-violet-400">Banka</span>
+            </span>
+          </Link>
+          <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-4">Employee Portal</p>
+          <h1 className="font-serif text-4xl font-light text-slate-900 dark:text-white mb-3">Staff Sign In</h1>
+          <div className="w-10 h-px bg-violet-500 dark:bg-violet-400 mx-auto" />
+        </div>
 
-        <div className="w-full max-w-md">
-          <div className="text-center mb-10">
-            <p className="text-xs tracking-widest uppercase text-amber-500 mb-4">Employee Portal</p>
-            <h1 className="font-serif text-4xl font-light text-white mb-3">Staff Sign In</h1>
-            <div className="w-10 h-px bg-amber-500 mx-auto" />
-          </div>
-
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-8 shadow-sm">
           <form onSubmit={handleSubmit} noValidate className="space-y-6">
             {/* Email */}
             <div>
               <label
                 htmlFor="email"
-                className="block text-xs tracking-widest uppercase text-slate-400 mb-2"
+                className="block text-xs tracking-widest uppercase text-slate-600 dark:text-slate-400 mb-2"
               >
                 Email Address
               </label>
@@ -87,14 +84,11 @@ function LoginPage() {
                 value={fields.email}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                placeholder="employee@exbanka.com"
-                className={`input-field bg-slate-900 text-white placeholder-slate-600 ${
-                  visibleErrors.email ? 'input-error' : ''
-                }`}
-                style={{ borderColor: visibleErrors.email ? undefined : 'rgba(255,255,255,0.1)' }}
+                placeholder="employee@ankabanka.com"
+                className={`input-field ${visibleErrors.email ? 'input-error' : ''}`}
               />
               {visibleErrors.email && (
-                <p className="mt-2 text-xs text-red-400">{visibleErrors.email}</p>
+                <p className="mt-2 text-xs text-red-500">{visibleErrors.email}</p>
               )}
             </div>
 
@@ -103,13 +97,13 @@ function LoginPage() {
               <div className="flex items-center justify-between mb-2">
                 <label
                   htmlFor="password"
-                  className="block text-xs tracking-widest uppercase text-slate-400"
+                  className="block text-xs tracking-widest uppercase text-slate-600 dark:text-slate-400"
                 >
                   Password
                 </label>
                 <Link
                   to="/forgot-password"
-                  className="text-xs text-amber-500 hover:text-amber-400 transition-colors"
+                  className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300 transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -124,15 +118,12 @@ function LoginPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   placeholder="Min. 8 characters"
-                  className={`input-field bg-slate-900 text-white placeholder-slate-600 pr-12 ${
-                    visibleErrors.password ? 'input-error' : ''
-                  }`}
-                  style={{ borderColor: visibleErrors.password ? undefined : 'rgba(255,255,255,0.1)' }}
+                  className={`input-field pr-12 ${visibleErrors.password ? 'input-error' : ''}`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
@@ -148,7 +139,7 @@ function LoginPage() {
                 </button>
               </div>
               {visibleErrors.password && (
-                <p className="mt-2 text-xs text-red-400">{visibleErrors.password}</p>
+                <p className="mt-2 text-xs text-red-500">{visibleErrors.password}</p>
               )}
             </div>
 
@@ -156,7 +147,6 @@ function LoginPage() {
               Sign In
             </button>
           </form>
-
         </div>
       </div>
     </div>

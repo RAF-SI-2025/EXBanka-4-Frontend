@@ -4,11 +4,12 @@ export default {
     './index.html',
     './src/**/*.{js,ts,jsx,tsx}',
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
-        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-        sans:  ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['Montserrat', 'system-ui', 'sans-serif'],
+        sans:  ['"DM Sans"', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         'card':       '0 4px 24px 0 rgba(15,23,42,0.08)',
