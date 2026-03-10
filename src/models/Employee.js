@@ -1,4 +1,26 @@
 /**
+ * System permissions available to employees.
+ * Each key maps to a human-readable label.
+ */
+export const PERMISSIONS = {
+  canViewClients:        'View Clients',
+  canCreateAccounts:     'Create Accounts',
+  canApproveLoans:       'Approve Loans',
+  canProcessTransactions:'Process Transactions',
+  canManageEmployees:    'Manage Employees',
+  canViewReports:        'View Reports',
+}
+
+export const DEFAULT_PERMISSIONS = {
+  canViewClients:         false,
+  canCreateAccounts:      false,
+  canApproveLoans:        false,
+  canProcessTransactions: false,
+  canManageEmployees:     false,
+  canViewReports:         false,
+}
+
+/**
  * Employee model
  *
  * Represents a bank employee as returned by the API.
@@ -21,6 +43,7 @@ export class Employee {
     position,     // string  — rarely changes (e.g. 'Manager')
     department,   // string  — rarely changes (e.g. 'Finance')
     active,       // boolean — rarely changes
+    permissions,  // object  — system access permissions
   }) {
     this.id           = id
     this.firstName    = firstName
@@ -36,6 +59,7 @@ export class Employee {
     this.position     = position
     this.department   = department
     this.active       = active
+    this.permissions  = { ...DEFAULT_PERMISSIONS, ...permissions }
   }
 
   /** Full display name */
@@ -64,5 +88,6 @@ export function employeeFromApi(data) {
     position:     data.position,
     department:   data.department,
     active:       data.active,
+    permissions:  data.permissions,
   })
 }
