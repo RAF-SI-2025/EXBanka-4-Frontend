@@ -1,39 +1,37 @@
 /**
  * Token Service
  *
- * Access token  → stored in memory only (not localStorage/sessionStorage).
- *   - Survives page re-renders but NOT full page reloads.
- *   - Protects against XSS reading the token from storage.
+ * Access token  → stored in sessionStorage.
+ *   - Cleared when the tab/browser is closed.
  *
- * Refresh token → stored in localStorage.
+ * Refresh token → stored in sessionStorage.
  *   - Used to silently re-issue access tokens after expiry.
  *   - In production, prefer an httpOnly cookie set by the server.
  */
 
+const ACCESS_TOKEN_KEY = 'access_token'
 const TOKEN_KEY = 'refresh_token'
 
-let _accessToken = null
-
 export const tokenService = {
-  // ── Access token (in-memory) ────────────────────────────────────────────
+  // ── Access token (sessionStorage) ──────────────────────────────────────
   getAccessToken() {
-    return _accessToken
+    return sessionStorage.getItem(ACCESS_TOKEN_KEY)
   },
   setAccessToken(token) {
-    _accessToken = token
+    sessionStorage.setItem(ACCESS_TOKEN_KEY, token)
   },
 
-  // ── Refresh token (localStorage) ───────────────────────────────────────
+  // ── Refresh token (sessionStorage) ─────────────────────────────────────
   getRefreshToken() {
-    return localStorage.getItem(TOKEN_KEY)
+    return sessionStorage.getItem(TOKEN_KEY)
   },
   setRefreshToken(token) {
-    localStorage.setItem(TOKEN_KEY, token)
+    sessionStorage.setItem(TOKEN_KEY, token)
   },
 
   // ── Clear both (called on logout or auth failure) ───────────────────────
   clear() {
-    _accessToken = null
-    localStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(ACCESS_TOKEN_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
   },
 }

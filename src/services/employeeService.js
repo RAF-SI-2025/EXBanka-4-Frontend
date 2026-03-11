@@ -50,6 +50,22 @@ export const employeeService = {
   },
 
   /**
+   * GET /employees/search?ime=&prezime=&email=&pozicija=
+   * Accepts camelCase filter keys; maps to Serbian backend query params.
+   */
+  async searchEmployees({ firstName = '', lastName = '', email = '', position = '' } = {}) {
+    const { data } = await apiClient.get('/employees/search', {
+      params: {
+        ime:      firstName,
+        prezime:  lastName,
+        email:    email,
+        pozicija: position,
+      },
+    })
+    return data   // { employees, total_count }
+  },
+
+  /**
    * PUT /employees/:id
    * Accepts camelCase form data; maps to snake_case backend body.
    */
