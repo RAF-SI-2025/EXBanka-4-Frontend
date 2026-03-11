@@ -10,6 +10,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import AdminEmployeesPage from './pages/AdminEmployeesPage'
 import EmployeeDetailPage from './pages/EmployeeDetailPage'
 import NewEmployeePage from './pages/NewEmployeePage'
+import SetPasswordPage from './pages/SetPasswordPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
           {/* Auth pages — full-screen, no layout */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/set-password/:token" element={<SetPasswordPage />} />
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

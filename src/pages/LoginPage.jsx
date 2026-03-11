@@ -45,14 +45,14 @@ function LoginPage() {
     setTouched((prev) => ({ ...prev, [e.target.name]: true }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setSubmitted(true)
     if (Object.keys(errors).length > 0) return
-    const ok = login(fields.email, fields.password)
-    if (ok) {
+    try {
+      await login(fields.email, fields.password)
       navigate('/')
-    } else {
+    } catch {
       setAuthError('Invalid email or password.')
     }
   }

@@ -1,37 +1,56 @@
-import { createContext, useContext, useState } from 'react'
-import { mockAdmin } from '../mocks/employees'
+/**
+ * AuthContext
+ *
+ * Provides { user, login, logout, loading } to the component tree.
+ *
+ * On mount it attempts to restore a session from a stored refresh token.
+ * It also listens for the 'auth:session-expired' event dispatched by the
+ * apiClient interceptor when a token refresh fails, and logs the user out.
+ *
+ * The `user` object shape:
+ *   { id, firstName, lastName, email, roles: string[], permissions: object }
+ */
+
+import { createContext, useContext, useEffect, useState } from 'react'
+import { authService } from '../services/authService'
 
 const AuthContext = createContext()
 
-const MOCK_ACCOUNTS = [mockAdmin]
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = sessionStorage.getItem('auth_user')
-      return stored ? JSON.parse(stored) : null
-    } catch {
-      return null
-    }
-  })
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)   // true while restoring session
 
-  function login(email, password) {
-    const match = MOCK_ACCOUNTS.find(
-      (e) => e.email === email && e.password === password
-    )
-    if (!match) return false
-    setUser(match)
-    sessionStorage.setItem('auth_user', JSON.stringify(match))
-    return true
+  // ── Restore session on mount ────────────────────────────────────────────
+  useEffect(() => {
+    authService.restoreSession()
+      .then((restored) => setUser(restored))
+      .finally(() => setLoading(false))
+  }, [])
+
+  // ── Listen for forced logout from the interceptor ───────────────────────
+  useEffect(() => {
+    function handleExpired() {
+      setUser(null)
+    }
+    window.addEventListener('auth:session-expired', handleExpired)
+    return () => window.removeEventListener('auth:session-expired', handleExpired)
+  }, [])
+
+  // ── Public API ──────────────────────────────────────────────────────────
+
+  async function login(email, password) {
+    const userData = await authService.login(email, password)
+    setUser(userData)
+    return userData
   }
 
-  function logout() {
+  async function logout() {
+    await authService.logout()
     setUser(null)
-    sessionStorage.removeItem('auth_user')
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   )

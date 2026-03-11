@@ -7,6 +7,7 @@ export const mockAdmin = make({
   gender: 'M', email: 'admin@gmail.com', phoneNumber: '+381600000000',
   address: 'RAF Campus 1', username: 'admin', password: 'rafrafSI26',
   saltPassword: 'mockSalt', position: 'Administrator', department: 'IT', active: true,
+  roles: ['ADMIN'],
   permissions: { canViewClients: true, canCreateAccounts: true, canApproveLoans: true, canProcessTransactions: true, canManageEmployees: true, canViewReports: true },
 })
 
