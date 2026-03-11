@@ -1,33 +1,42 @@
 import { createContext, useContext, useState } from 'react'
-import { mockEmployees } from '../mocks/employees'
+import { employeeService } from '../services/employeeService'
+import { employeeFromApi } from '../models/Employee'
 
 const EmployeesContext = createContext()
 
 export function EmployeesProvider({ children }) {
-  const [employees, setEmployees] = useState(mockEmployees)
+  const [employees, setEmployees] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-  function updateEmployee(id, updatedFields) {
-    setEmployees((prev) =>
-      prev.map((emp) =>
-        emp.id === id ? Object.assign(Object.create(Object.getPrototypeOf(emp)), emp, updatedFields) : emp
-      )
-    )
+  async function reload() {
+    setLoading(true)
+    setError(null)
+    try {
+      const { employees: raw } = await employeeService.getEmployees()
+      setEmployees(raw.map(employeeFromApi))
+    } catch (err) {
+      setError(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  function addEmployee(data) {
-    const nextId = Math.max(...employees.map((e) => e.id)) + 1
-    const newEmp = Object.assign(Object.create(Object.getPrototypeOf(employees[0])), {
-      ...data,
-      id: nextId,
-      password: '',
-      saltPassword: '',
-    })
-    setEmployees((prev) => [...prev, newEmp])
-    return nextId
+  async function updateEmployee(id, updatedFields) {
+    const raw = await employeeService.updateEmployee(id, updatedFields)
+    const updated = employeeFromApi(raw)
+    setEmployees((prev) => prev.map((emp) => emp.id === id ? updated : emp))
+  }
+
+  async function addEmployee(data) {
+    const raw = await employeeService.createEmployee(data)
+    const created = employeeFromApi(raw)
+    setEmployees((prev) => [...prev, created])
+    return created.id
   }
 
   return (
-    <EmployeesContext.Provider value={{ employees, updateEmployee, addEmployee }}>
+    <EmployeesContext.Provider value={{ employees, loading, error, reload, updateEmployee, addEmployee }}>
       {children}
     </EmployeesContext.Provider>
   )

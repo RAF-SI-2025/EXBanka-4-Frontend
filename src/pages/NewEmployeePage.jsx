@@ -43,15 +43,19 @@ export default function NewEmployeePage() {
     return next
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) {
       setErrors(errs)
       return
     }
-    addEmployee(form)
-    navigate('/admin/employees')
+    try {
+      await addEmployee(form)
+      navigate('/admin/employees')
+    } catch {
+      setErrors((prev) => ({ ...prev, _submit: true }))
+    }
   }
 
   return (
@@ -150,6 +154,9 @@ export default function NewEmployeePage() {
 
           </div>
 
+          {errors._submit && (
+            <p className="mt-4 text-xs text-red-500">Failed to create employee. Please try again.</p>
+          )}
           <div className="flex gap-3 mt-6">
             <button type="submit" className="btn-primary">
               Create Employee

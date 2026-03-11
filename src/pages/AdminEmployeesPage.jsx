@@ -1,35 +1,77 @@
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import useWindowTitle from '../hooks/useWindowTitle'
 import { useEmployees } from '../context/EmployeesContext'
+import { employeeService } from '../services/employeeService'
+import { employeeFromApi } from '../models/Employee'
+
+const EMPTY_FILTERS = { firstName: '', lastName: '', email: '', position: '' }
 
 export default function AdminEmployeesPage() {
   useWindowTitle('Employees | AnkaBanka Admin')
   const navigate = useNavigate()
-  const { employees } = useEmployees()
+  const { employees, loading, error, reload } = useEmployees()
 
-  const [filters, setFilters] = useState({ firstName: '', lastName: '', email: '', position: '' })
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const [searchResults, setSearchResults] = useState(null)  // null = no active search
+  const [searching, setSearching] = useState(false)
+  const debounceRef = useRef(null)
+
+  // Load full list on mount (user is already authenticated at this point)
+  useEffect(() => { reload() }, [])
+
+  // Debounce filter changes → call search endpoint
+  useEffect(() => {
+    const hasFilters = Object.values(filters).some(Boolean)
+
+    if (!hasFilters) {
+      setSearchResults(null)
+      return
+    }
+
+    clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const { employees: raw } = await employeeService.searchEmployees(filters)
+        setSearchResults(raw.map(employeeFromApi))
+      } catch {
+        setSearchResults([])
+      } finally {
+        setSearching(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(debounceRef.current)
+  }, [filters])
 
   function handleFilter(e) {
     setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   function clearFilters() {
-    setFilters({ firstName: '', lastName: '', email: '', position: '' })
+    setFilters(EMPTY_FILTERS)
   }
 
-  const filtered = useMemo(() => {
-    const { firstName, lastName, email, position } = filters
-    return employees.filter((emp) => {
-      if (firstName && !emp.firstName.toLowerCase().includes(firstName.toLowerCase())) return false
-      if (lastName  && !emp.lastName.toLowerCase().includes(lastName.toLowerCase()))   return false
-      if (email     && !emp.email.toLowerCase().includes(email.toLowerCase()))         return false
-      if (position  && !emp.position.toLowerCase().includes(position.toLowerCase()))   return false
-      return true
-    })
-  }, [filters, employees])
-
   const hasFilters = Object.values(filters).some(Boolean)
+  const displayed = searchResults ?? employees
+  const isLoading = loading || searching
+
+  if (loading && !hasFilters) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <p className="text-slate-500 dark:text-slate-400 text-sm">Loading employees…</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <p className="text-red-500 text-sm">Failed to load employees. Is the backend running?</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-6 py-16">
@@ -81,14 +123,20 @@ export default function AdminEmployeesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
+                      Searching…
+                    </td>
+                  </tr>
+                ) : displayed.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
                       No employees match the current filters.
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((emp, i) => (
+                  displayed.map((emp, i) => (
                     <tr
                       key={emp.id}
                       onClick={() => navigate(`/admin/employees/${emp.id}`)}
@@ -116,9 +164,9 @@ export default function AdminEmployeesPage() {
               </tbody>
             </table>
           </div>
-          {filtered.length > 0 && (
+          {!isLoading && displayed.length > 0 && (
             <div className="px-6 py-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500">
-              Showing {filtered.length} of {employees.length} employees
+              Showing {displayed.length}{hasFilters ? ` result${displayed.length !== 1 ? 's' : ''}` : ` of ${employees.length} employees`}
             </div>
           )}
         </div>

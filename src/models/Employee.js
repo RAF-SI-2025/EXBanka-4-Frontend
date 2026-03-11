@@ -68,26 +68,55 @@ export class Employee {
   }
 }
 
+// Maps frontend permission keys to their backend dozvole string equivalents.
+const DOZVOLE_MAP = {
+  canViewClients:         'READ',
+  canCreateAccounts:      'WRITE',
+  canApproveLoans:        'LOANS',
+  canProcessTransactions: 'TRANSACTIONS',
+  canManageEmployees:     'EMPLOYEES',
+  canViewReports:         'REPORTS',
+}
+
+/**
+ * Convert a dozvole string array (backend) to a permissions boolean object (frontend).
+ */
+export function permissionsFromDozvole(dozvole = []) {
+  const upper = dozvole.map((d) => d.toUpperCase())
+  return Object.fromEntries(
+    Object.entries(DOZVOLE_MAP).map(([key, str]) => [key, upper.includes(str)])
+  )
+}
+
+/**
+ * Convert a permissions boolean object (frontend) back to a dozvole string array (backend).
+ */
+export function dozvoleFromPermissions(permissions = {}) {
+  return Object.entries(DOZVOLE_MAP)
+    .filter(([key]) => permissions[key])
+    .map(([, str]) => str)
+}
+
 /**
  * Creates an Employee instance from a raw API response object.
- * Adjust field mapping here if the API uses different naming conventions.
+ * Maps Serbian backend field names to English camelCase frontend fields.
  */
 export function employeeFromApi(data) {
   return new Employee({
     id:           data.id,
-    firstName:    data.firstName,
-    lastName:     data.lastName,
-    dateOfBirth:  data.dateOfBirth,
-    gender:       data.gender,
+    firstName:    data.ime,
+    lastName:     data.prezime,
+    dateOfBirth:  data.datum_rodjenja,
+    gender:       data.pol,
     email:        data.email,
-    phoneNumber:  data.phoneNumber,
-    address:      data.address,
+    phoneNumber:  data.broj_telefona,
+    address:      data.adresa,
     username:     data.username,
-    password:     data.password,
-    saltPassword: data.saltPassword,
-    position:     data.position,
-    department:   data.department,
-    active:       data.active,
-    permissions:  data.permissions,
+    password:     '',
+    saltPassword: '',
+    position:     data.pozicija,
+    department:   data.departman,
+    active:       data.aktivan,
+    permissions:  permissionsFromDozvole(data.dozvole),
   })
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import useWindowTitle from '../hooks/useWindowTitle'
 import { useEmployees } from '../context/EmployeesContext'
@@ -6,7 +6,12 @@ import { PERMISSIONS } from '../models/Employee'
 
 export default function EmployeeDetailPage() {
   const { id } = useParams()
-  const { employees, updateEmployee } = useEmployees()
+  const { employees, loading, reload, updateEmployee } = useEmployees()
+
+  useEffect(() => {
+    if (employees.length === 0 && !loading) reload()
+  }, [])
+
   const emp = employees.find((e) => e.id === Number(id))
 
   useWindowTitle(emp ? `${emp.fullName} | AnkaBanka` : 'Employee | AnkaBanka')
@@ -52,9 +57,13 @@ export default function EmployeeDetailPage() {
     setForm((prev) => ({ ...prev, permissions: { ...prev.permissions, [name]: checked } }))
   }
 
-  function handleSave() {
-    updateEmployee(emp.id, form)
-    setEditing(false)
+  async function handleSave() {
+    try {
+      await updateEmployee(emp.id, form)
+      setEditing(false)
+    } catch {
+      // keep editing open so user can retry
+    }
   }
 
   function handleCancel() {
