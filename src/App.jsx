@@ -11,6 +11,7 @@ import AdminEmployeesPage from './pages/AdminEmployeesPage'
 import EmployeeDetailPage from './pages/EmployeeDetailPage'
 import NewEmployeePage from './pages/NewEmployeePage'
 import SetPasswordPage from './pages/SetPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/set-password" element={<SetPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

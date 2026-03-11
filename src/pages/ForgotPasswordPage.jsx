@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import useWindowTitle from '../hooks/useWindowTitle'
+import { authService } from '../services/authService'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -11,6 +12,7 @@ function ForgotPasswordPage() {
   const [touched, setTouched] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [sent, setSent] = useState(false)
+  const [apiError, setApiError] = useState(null)
 
   const emailError =
     !email
@@ -21,13 +23,18 @@ function ForgotPasswordPage() {
 
   const showError = (touched || submitted) && emailError
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setSubmitted(true)
     if (emailError) return
-    // TODO: call password reset service
-    console.log('Reset requested for:', email)
-    setSent(true)
+    setApiError(null)
+    try {
+      await authService.forgotPassword(email)
+      setSent(true)
+    } catch (err) {
+      const msg = err?.response?.data?.error
+      setApiError(msg ?? 'Something went wrong. Please try again.')
+    }
   }
 
   return (
@@ -97,6 +104,10 @@ function ForgotPasswordPage() {
                     <p className="mt-2 text-xs text-red-500">{emailError}</p>
                   )}
                 </div>
+
+                {apiError && (
+                  <p className="text-xs text-red-500">{apiError}</p>
+                )}
 
                 <button type="submit" className="btn-primary w-full">
                   Send Reset Link

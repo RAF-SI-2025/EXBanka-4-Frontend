@@ -76,6 +76,26 @@ export const authService = {
   },
 
   /**
+   * Request a password reset email for the given address.
+   * POST /auth/forgot-password → { message }
+   */
+  async forgotPassword(email) {
+    await apiClient.post('/auth/forgot-password', { email })
+  },
+
+  /**
+   * Reset a password using the token from the reset email link.
+   * POST /auth/reset-password → { message }
+   */
+  async resetPassword(token, password, confirmPassword) {
+    await apiClient.post('/auth/reset-password', {
+      token,
+      password,
+      confirm_password: confirmPassword,
+    })
+  },
+
+  /**
    * Log out the current user.
    * Clears tokens locally (no backend logout endpoint).
    */
