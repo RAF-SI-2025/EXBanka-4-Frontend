@@ -15,7 +15,7 @@
 import axios from 'axios'
 import { tokenService } from './tokenService'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api'
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8081'
 
 // ── Bare client used only for token refresh ─────────────────────────────────
 // No interceptors — prevents infinite 401 loop if the refresh endpoint itself
@@ -76,14 +76,13 @@ apiClient.interceptors.response.use(
       const refreshToken = tokenService.getRefreshToken()
       if (!refreshToken) throw new Error('No refresh token available.')
 
-      const { data } = await refreshClient.post('/auth/refresh', { refreshToken })
+      const { data } = await refreshClient.post('/refresh', { refresh_token: refreshToken })
 
-      tokenService.setAccessToken(data.accessToken)
-      if (data.refreshToken) tokenService.setRefreshToken(data.refreshToken)
+      tokenService.setAccessToken(data.access_token)
 
-      flushQueue(null, data.accessToken)
+      flushQueue(null, data.access_token)
 
-      original.headers.Authorization = `Bearer ${data.accessToken}`
+      original.headers.Authorization = `Bearer ${data.access_token}`
       return apiClient(original)
     } catch (refreshError) {
       flushQueue(refreshError, null)

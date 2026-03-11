@@ -3,19 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import useWindowTitle from '../hooks/useWindowTitle'
 import { useAuth } from '../context/AuthContext'
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
 function validate(fields) {
   const errors = {}
-  if (!fields.email) {
-    errors.email = 'Email address is required.'
-  } else if (!EMAIL_REGEX.test(fields.email)) {
-    errors.email = 'Please enter a valid email address.'
+  if (!fields.username) {
+    errors.username = 'Username is required.'
   }
   if (!fields.password) {
     errors.password = 'Password is required.'
-  } else if (fields.password.length < 8) {
-    errors.password = 'Password must be at least 8 characters.'
   }
   return errors
 }
@@ -25,15 +19,15 @@ function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const [fields, setFields] = useState({ email: '', password: '' })
-  const [touched, setTouched] = useState({ email: false, password: false })
+  const [fields, setFields] = useState({ username: '', password: '' })
+  const [touched, setTouched] = useState({ username: false, password: false })
   const [submitted, setSubmitted] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [authError, setAuthError] = useState(null)
 
   const errors = validate(fields)
   const visibleErrors = {
-    email:    (touched.email    || submitted) ? errors.email    : undefined,
+    username: (touched.username || submitted) ? errors.username : undefined,
     password: (touched.password || submitted) ? errors.password : undefined,
   }
 
@@ -50,10 +44,10 @@ function LoginPage() {
     setSubmitted(true)
     if (Object.keys(errors).length > 0) return
     try {
-      await login(fields.email, fields.password)
+      await login(fields.username, fields.password)
       navigate('/')
     } catch {
-      setAuthError('Invalid email or password.')
+      setAuthError('Invalid username or password.')
     }
   }
 
@@ -76,27 +70,27 @@ function LoginPage() {
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-8 shadow-sm">
           <form onSubmit={handleSubmit} noValidate className="space-y-6">
-            {/* Email */}
+            {/* Username */}
             <div>
               <label
-                htmlFor="email"
+                htmlFor="username"
                 className="block text-xs tracking-widest uppercase text-slate-600 dark:text-slate-400 mb-2"
               >
-                Email Address
+                Username
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={fields.email}
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                value={fields.username}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                placeholder="employee@ankabanka.com"
-                className={`input-field ${visibleErrors.email ? 'input-error' : ''}`}
+                placeholder="your.username"
+                className={`input-field ${visibleErrors.username ? 'input-error' : ''}`}
               />
-              {visibleErrors.email && (
-                <p className="mt-2 text-xs text-red-500">{visibleErrors.email}</p>
+              {visibleErrors.username && (
+                <p className="mt-2 text-xs text-red-500">{visibleErrors.username}</p>
               )}
             </div>
 
@@ -125,7 +119,7 @@ function LoginPage() {
                   value={fields.password}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  placeholder="Min. 8 characters"
+                  placeholder="Password"
                   className={`input-field pr-12 ${visibleErrors.password ? 'input-error' : ''}`}
                 />
                 <button
