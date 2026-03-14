@@ -42,6 +42,9 @@ function Navbar() {
             {user?.roles?.includes('ADMIN') && (
               <NavLink to="/admin/employees" className={linkClass}>Employees</NavLink>
             )}
+            {user?.permissions?.canViewClients && (
+              <NavLink to="/admin/clients" className={linkClass}>Clients</NavLink>
+            )}
           </div>
 
           {/* Desktop CTA */}
@@ -100,6 +103,9 @@ function Navbar() {
             <NavLink to="/" className={linkClass} end onClick={() => setMenuOpen(false)}>Home</NavLink>
             {user?.roles?.includes('ADMIN') && (
               <NavLink to="/admin/employees" className={linkClass} onClick={() => setMenuOpen(false)}>Employees</NavLink>
+            )}
+            {user?.permissions?.canViewClients && (
+              <NavLink to="/admin/clients" className={linkClass} onClick={() => setMenuOpen(false)}>Clients</NavLink>
             )}
             <div className="flex items-center gap-4">
               <button
