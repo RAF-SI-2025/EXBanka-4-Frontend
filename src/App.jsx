@@ -22,6 +22,7 @@ import NewAccountPage from './pages/NewAccountPage'
 import ClientLoginPage from './pages/ClientLoginPage'
 import ClientHomePage from './pages/ClientHomePage'
 import ClientAccountsOverviewPage from './pages/ClientAccountsOverviewPage'
+import ClientAccountDetailPage from './pages/ClientAccountDetailPage'
 import SetPasswordPage from './pages/SetPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -62,6 +63,7 @@ function App() {
           <Route path="/client/login" element={<ClientLoginPage />} />
           <Route path="/client" element={<ClientHomePage />} />
           <Route path="/client/accounts" element={<ClientAccountsOverviewPage />} />
+          <Route path="/client/accounts/:id" element={<ClientAccountDetailPage />} />
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

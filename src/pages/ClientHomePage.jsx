@@ -6,12 +6,32 @@ import { useClientAuth } from '../context/ClientAuthContext'
 
 // ─── Mock data (swap for real API calls later) ────────────────────────────────
 
-const MOCK_ACCOUNT = {
-  accountNumber: '265-0000000123456-78',
-  availableBalance: 121_234.00,
-  balance: 123_456.00,
-  currency: 'RSD',
-}
+const MOCK_CLIENT_ACCOUNTS = [
+  {
+    id: 1,
+    accountNumber: '265-0000000123456-78',
+    accountName: 'Standard Current',
+    currency: 'RSD',
+    balance: 123_456.00,
+    availableBalance: 121_234.00,
+  },
+  {
+    id: 2,
+    accountNumber: '265-0000000234567-89',
+    accountName: 'Savings',
+    currency: 'RSD',
+    balance: 45_000.00,
+    availableBalance: 45_000.00,
+  },
+  {
+    id: 3,
+    accountNumber: '265-0000000345678-90',
+    accountName: 'Foreign Currency',
+    currency: 'EUR',
+    balance: 850.00,
+    availableBalance: 850.00,
+  },
+]
 
 const MOCK_TRANSACTIONS = [
   { id: 1, description: 'Coffee Shop',      amount: -350,   date: '2026-03-14' },
@@ -43,6 +63,134 @@ function fmt(n) {
   return n.toLocaleString('sr-RS', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function BalanceCarousel({ accounts }) {
+  const multi = accounts.length > 1
+  const [index, setIndex] = useState(0)
+  const [cardHovered, setCardHovered] = useState(false)
+  const [nameHovered, setNameHovered] = useState(false)
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [names, setNames] = useState(() =>
+    Object.fromEntries(accounts.map((a) => [a.id, a.accountName]))
+  )
+
+  const acct = accounts[index]
+  const currentName = names[acct.id]
+
+  function saveName() {
+    if (nameInput.trim()) setNames((prev) => ({ ...prev, [acct.id]: nameInput.trim() }))
+    setEditingName(false)
+  }
+
+  return (
+    <div
+      style={{ gridArea: 'balance' }}
+      className="bg-white/70 dark:bg-slate-900/70 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl p-5 select-none flex flex-col"
+      onMouseEnter={() => setCardHovered(true)}
+      onMouseLeave={() => setCardHovered(false)}
+    >
+      {/* Header: label + account name */}
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-xs tracking-widest uppercase text-slate-400 dark:text-slate-500">Balance</p>
+        <div
+          className="flex items-center gap-1 min-w-0"
+          onMouseEnter={() => setNameHovered(true)}
+          onMouseLeave={() => setNameHovered(false)}
+        >
+          {editingName ? (
+            <>
+              <input
+                autoFocus
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(false) }}
+                className="input-field text-xs py-0.5 px-1.5 w-28"
+              />
+              <button onClick={saveName} className="text-violet-500 hover:text-violet-700 transition-colors shrink-0">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+              <button onClick={() => setEditingName(false)} className="text-slate-400 hover:text-slate-600 transition-colors shrink-0">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-light truncate">{currentName}</span>
+              <button
+                onClick={() => { setNameInput(currentName); setEditingName(true) }}
+                className={`text-slate-300 dark:text-slate-600 hover:text-violet-500 dark:hover:text-violet-400 transition-opacity duration-200 shrink-0 ${nameHovered ? 'opacity-100' : 'opacity-0'}`}
+                aria-label="Rename account"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Content + side arrows */}
+      <div className="relative flex-1">
+        {multi && (
+          <button
+            onClick={() => setIndex((i) => (i - 1 + accounts.length) % accounts.length)}
+            className={`group absolute inset-y-0 -left-5 w-8 flex items-center justify-start transition-opacity duration-200 ${cardHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            aria-label="Previous account"
+          >
+            <svg className="w-2.5 h-2.5 text-slate-300 dark:text-slate-600 group-hover:w-4 group-hover:h-4 group-hover:text-violet-500 dark:group-hover:text-violet-400 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
+
+        <p className="font-serif text-3xl font-light text-slate-900 dark:text-white leading-none">
+          {fmt(acct.availableBalance)}
+        </p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 mb-4">{acct.currency} available</p>
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+          <p className="text-xs text-slate-400 dark:text-slate-500">
+            Total <span className="text-slate-600 dark:text-slate-300">{fmt(acct.balance)} {acct.currency}</span>
+          </p>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate" title={acct.accountNumber}>
+            {acct.accountNumber}
+          </p>
+        </div>
+
+        {multi && (
+          <button
+            onClick={() => setIndex((i) => (i + 1) % accounts.length)}
+            className={`group absolute inset-y-0 -right-5 w-8 flex items-center justify-end transition-opacity duration-200 ${cardHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+            aria-label="Next account"
+          >
+            <svg className="w-2.5 h-2.5 text-slate-300 dark:text-slate-600 group-hover:w-4 group-hover:h-4 group-hover:text-violet-500 dark:group-hover:text-violet-400 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Dots */}
+      {multi && (
+        <div className={`flex justify-center gap-1.5 mt-4 transition-opacity duration-200 ${cardHovered ? 'opacity-100' : 'opacity-0'}`}>
+          {accounts.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setIndex(i)}
+              className={`w-1.5 h-1.5 rounded-full transition-colors duration-200 ${i === index ? 'bg-violet-500 dark:bg-violet-400' : 'bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500'}`}
+              aria-label={`Account ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export default function ClientHomePage() {
@@ -56,6 +204,7 @@ export default function ClientHomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   useEffect(() => {
+    if (clientUser) return
     const handleMouse = (e) => {
       const cx = window.innerWidth / 2
       const cy = window.innerHeight / 2
@@ -66,7 +215,7 @@ export default function ClientHomePage() {
     }
     window.addEventListener('mousemove', handleMouse)
     return () => window.removeEventListener('mousemove', handleMouse)
-  }, [])
+  }, [clientUser])
 
   async function handleLogout() {
     await clientLogout()
@@ -247,22 +396,8 @@ export default function ClientHomePage() {
                   gap: '1rem',
                 }}>
 
-                  {/* ① Balance — compact top-left */}
-                  <div style={{ gridArea: 'balance' }} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl p-5">
-                    <p className="text-xs tracking-widest uppercase text-slate-400 dark:text-slate-500 mb-4">Balance</p>
-                    <p className="font-serif text-3xl font-light text-slate-900 dark:text-white leading-none">
-                      {fmt(MOCK_ACCOUNT.availableBalance)}
-                    </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 mb-4">{MOCK_ACCOUNT.currency} available</p>
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
-                      <p className="text-xs text-slate-400 dark:text-slate-500">
-                        Total <span className="text-slate-600 dark:text-slate-300">{fmt(MOCK_ACCOUNT.balance)} RSD</span>
-                      </p>
-                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 truncate" title={MOCK_ACCOUNT.accountNumber}>
-                        {MOCK_ACCOUNT.accountNumber}
-                      </p>
-                    </div>
-                  </div>
+                  {/* ① Balance carousel */}
+                  <BalanceCarousel accounts={MOCK_CLIENT_ACCOUNTS} />
 
                   {/* ② Recent transactions — tall, spans both left rows */}
                   <div style={{ gridArea: 'transactions' }} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl p-5 flex flex-col">

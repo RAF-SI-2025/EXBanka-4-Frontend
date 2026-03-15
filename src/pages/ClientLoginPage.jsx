@@ -52,7 +52,7 @@ export default function ClientLoginPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-6 py-16">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <Link to="/" className="inline-flex items-center gap-3 mb-8">
+          <Link to="/client" className="inline-flex items-center gap-3 mb-8">
             <div className="w-7 h-7 border border-violet-500 dark:border-violet-400 flex items-center justify-center">
               <span className="text-violet-500 dark:text-violet-400 text-xs font-serif font-semibold">A</span>
             </div>
