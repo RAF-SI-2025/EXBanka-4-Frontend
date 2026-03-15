@@ -89,7 +89,7 @@ export default function ClientHomePage() {
 
       {/* Sidebar — logged-in only */}
       {clientUser && (
-        <aside className={`${sidebarOpen ? 'w-48' : 'w-14'} shrink-0 flex flex-col transition-all duration-300 overflow-hidden bg-slate-100 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800`}>
+        <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} shrink-0 flex flex-col transition-all duration-300 overflow-hidden bg-slate-100 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800`}>
           {/* Hamburger */}
           <div className="flex items-center justify-center h-16 border-b border-slate-100 dark:border-slate-800">
             <button
@@ -186,7 +186,8 @@ export default function ClientHomePage() {
       </nav>
 
       {/* Page content */}
-      <main className="flex-1 container mx-auto px-6 py-16 max-w-7xl">
+      <main className="flex-1 overflow-auto">
+        <div className="max-w-5xl mx-auto px-6 py-10 w-full">
         <div className="relative min-h-[520px]">
 
           {/* Blobs */}
@@ -353,6 +354,7 @@ export default function ClientHomePage() {
           </section>
 
         </div>
+        </div> {/* end max-w-5xl centering wrapper */}
       </main>
       </div> {/* end right-side flex column */}
     </div>

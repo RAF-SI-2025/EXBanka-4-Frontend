@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import useWindowTitle from '../hooks/useWindowTitle'
 import { useClients } from '../context/ClientsContext'
 
@@ -46,9 +46,8 @@ export default function ClientsPage() {
 
         {/* Header */}
         <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-4">Employee Portal</p>
-        <div className="flex items-end justify-between mb-3">
+        <div className="mb-3">
           <h1 className="font-serif text-4xl font-light text-slate-900 dark:text-white">Clients</h1>
-          <Link to="/admin/clients/new" className="btn-primary">New Client</Link>
         </div>
         <div className="w-10 h-px bg-violet-500 dark:bg-violet-400 mb-10" />
 

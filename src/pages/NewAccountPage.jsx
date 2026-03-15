@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import useWindowTitle from '../hooks/useWindowTitle'
 import { useAccounts } from '../context/AccountsContext'
 import { useClients } from '../context/ClientsContext'
@@ -17,11 +17,12 @@ const EMPTY_FORM = {
 export default function NewAccountPage() {
   useWindowTitle('New Account | AnkaBanka')
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { addAccount } = useAccounts()
   const { clients, loading: clientsLoading, reload: reloadClients } = useClients()
   const { user } = useAuth()
 
-  const [form, setForm]     = useState(EMPTY_FORM)
+  const [form, setForm]     = useState({ ...EMPTY_FORM, ownerId: searchParams.get('clientId') ?? '' })
   const [errors, setErrors] = useState({})
   const [success, setSuccess] = useState(null)
 
@@ -158,6 +159,17 @@ export default function NewAccountPage() {
                 </select>
               )}
             </Field>
+            <div className="mt-3">
+              <Link
+                to="/admin/clients/new?returnTo=/admin/accounts/new"
+                className="inline-flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 transition-colors"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Create a new client
+              </Link>
+            </div>
           </div>
 
           {/* Account details */}

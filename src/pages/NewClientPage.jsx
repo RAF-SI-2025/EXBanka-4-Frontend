@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import useWindowTitle from '../hooks/useWindowTitle'
 import { useClients } from '../context/ClientsContext'
 
@@ -20,6 +20,8 @@ const REQUIRED = ['firstName', 'lastName', 'email', 'phoneNumber', 'address', 'd
 export default function NewClientPage() {
   useWindowTitle('New Client | AnkaBanka')
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const returnTo = searchParams.get('returnTo')
   const { clients, addClient } = useClients()
 
   const [form, setForm]     = useState(EMPTY_FORM)
@@ -84,18 +86,29 @@ export default function NewClientPage() {
               A welcome email has been sent to <span className="font-medium text-slate-700 dark:text-slate-300">{success.email}</span>.
             </p>
             <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => { setForm(EMPTY_FORM); setSuccess(null) }}
-                className="px-5 py-2 text-xs tracking-widest uppercase border border-violet-600 dark:border-violet-400 text-violet-600 dark:text-violet-400 hover:bg-violet-600 dark:hover:bg-violet-500 hover:text-white rounded-lg transition-colors"
-              >
-                New Client
-              </button>
-              <button
-                onClick={() => navigate('/admin/clients')}
-                className="px-5 py-2 text-xs tracking-widest uppercase bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
-              >
-                All Clients
-              </button>
+              {returnTo ? (
+                <button
+                  onClick={() => navigate(`${returnTo}?clientId=${success.id}`)}
+                  className="px-5 py-2 text-xs tracking-widest uppercase bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
+                >
+                  Create Account
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { setForm(EMPTY_FORM); setSuccess(null) }}
+                    className="px-5 py-2 text-xs tracking-widest uppercase border border-violet-600 dark:border-violet-400 text-violet-600 dark:text-violet-400 hover:bg-violet-600 dark:hover:bg-violet-500 hover:text-white rounded-lg transition-colors"
+                  >
+                    New Client
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin/clients')}
+                    className="px-5 py-2 text-xs tracking-widest uppercase bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
+                  >
+                    All Clients
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
