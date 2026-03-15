@@ -23,6 +23,8 @@ import ClientLoginPage from './pages/ClientLoginPage'
 import ClientHomePage from './pages/ClientHomePage'
 import ClientAccountsOverviewPage from './pages/ClientAccountsOverviewPage'
 import ClientAccountDetailPage from './pages/ClientAccountDetailPage'
+import ClientPaymentsPage from './pages/ClientPaymentsPage'
+import ClientPaymentDetailPage from './pages/ClientPaymentDetailPage'
 import SetPasswordPage from './pages/SetPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -64,6 +66,8 @@ function App() {
           <Route path="/client" element={<ClientHomePage />} />
           <Route path="/client/accounts" element={<ClientAccountsOverviewPage />} />
           <Route path="/client/accounts/:id" element={<ClientAccountDetailPage />} />
+          <Route path="/client/payments" element={<ClientPaymentsPage />} />
+          <Route path="/client/payments/:id" element={<ClientPaymentDetailPage />} />
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
