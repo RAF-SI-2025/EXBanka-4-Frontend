@@ -28,11 +28,11 @@ src/
 ├── layouts/
 │   ├── ClientPortalLayout.jsx   # sidebar + navbar for logged-in client pages
 │   └── MainLayout.jsx           # navbar + footer for employee pages
-├── context/          # React context providers (Auth, ClientAuth, ClientAccounts, ClientPayments, Theme, Employees, Clients, Accounts)
+├── context/          # React context providers (Auth, ClientAuth, ClientAccounts, ClientPayments, Recipients, Theme, Employees, Clients, Accounts)
 ├── components/       # shared components (Navbar, ProtectedRoute, PermissionGate, etc.)
-├── models/           # plain JS classes (BankAccount, Client, Employee, Payment)
-├── mocks/            # in-memory mock data (bankAccounts, clientAccounts, clients, employees, payments)
-├── services/         # API service functions (apiClient, authService, clientAuthService, clientAccountService, paymentService, etc.)
+├── models/           # plain JS classes (BankAccount, Client, Employee, Payment, Recipient)
+├── mocks/            # in-memory mock data (bankAccounts, clientAccounts, clients, employees, payments, recipients)
+├── services/         # API service functions (apiClient, authService, clientAuthService, clientAccountService, paymentService, recipientService, transferService, etc.)
 ├── hooks/            # custom hooks (useWindowTitle, usePermission)
 └── utils/            # utilities (permissions, formatting)
 ```
@@ -51,6 +51,8 @@ All pages that hit APIs use mock data while the backend is not ready. The patter
 4. Model files export a `*FromApi()` mapper function to convert backend responses
 
 Key split: `src/mocks/bankAccounts.js` is the employee-portal view of all bank accounts; `src/mocks/clientAccounts.js` is the client-portal view of the logged-in client's own accounts.
+
+When wiring transfers or other mutations: update the relevant service's in-memory store (e.g. `clientAccountService.applyTransfer`), then call `reload()` from the context after the operation so all pages reflect the new state.
 
 ### Client portal layout
 All logged-in client pages (except `ClientHomePage` which doubles as a landing page) use `<ClientPortalLayout>` which provides the sidebar and navbar. `NAV_ITEMS` is exported from `ClientPortalLayout.jsx` and shared with `ClientHomePage`.
@@ -78,7 +80,8 @@ Backend not yet integrated — all data is mocked. Pages are structured so API w
 | `/client/payments/new` | ClientNewPaymentPage | #24 |
 | `/client/payments/verify` | ClientPaymentVerifyPage | #25 |
 | `/client/payments/:id` | ClientPaymentDetailPage | #33 |
-| `/client/transfers` | ClientTransfersPage | stub |
+| `/client/transfers` | ClientTransfersPage | #26 |
+| `/client/recipients` | ClientRecipientsPage | #27, #28, #29, #30 |
 | `/client/exchange` | ClientExchangePage | stub |
 | `/client/cards` | ClientCardsPage | stub |
 | `/client/loans` | ClientLoansPage | stub |

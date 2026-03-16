@@ -350,7 +350,7 @@ export default function ClientHomePage() {
                 }}>
 
                   {/* ① Balance carousel */}
-                  <BalanceCarousel accounts={accounts} />
+                  {accounts.length > 0 && <BalanceCarousel accounts={accounts} />}
 
                   {/* ② Recent transactions — tall, spans both left rows */}
                   <div style={{ gridArea: 'transactions' }} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl p-5 flex flex-col">
