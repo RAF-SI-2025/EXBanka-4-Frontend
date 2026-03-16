@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useClientAccounts } from '../../context/ClientAccountsContext'
@@ -28,9 +28,16 @@ function Field({ label, error, children }) {
 export default function ClientNewPaymentPage() {
   useWindowTitle('New Payment | AnkaBanka')
   const navigate = useNavigate()
+  const location = useLocation()
   const { accounts } = useClientAccounts()
 
-  const [form, setForm]     = useState(EMPTY_FORM)
+  const prefilledRecipient = location.state?.recipient
+
+  const [form, setForm]     = useState(() => ({
+    ...EMPTY_FORM,
+    recipientName:    prefilledRecipient?.name          ?? '',
+    recipientAccount: prefilledRecipient?.accountNumber ?? '',
+  }))
   const [errors, setErrors] = useState({})
 
   const selectedAccount = accounts.find((a) => a.id === Number(form.fromAccountId))

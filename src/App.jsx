@@ -7,6 +7,7 @@ import { ClientsProvider } from './context/ClientsContext'
 import { AccountsProvider } from './context/AccountsContext'
 import { ClientAccountsProvider } from './context/ClientAccountsContext'
 import { ClientPaymentsProvider } from './context/ClientPaymentsContext'
+import { RecipientsProvider } from './context/RecipientsContext'
 import MainLayout from './layouts/MainLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import EmployeeHomePage from './pages/employee/EmployeeHomePage'
@@ -33,6 +34,7 @@ import ClientTransfersPage from './pages/client/ClientTransfersPage'
 import ClientExchangePage from './pages/client/ClientExchangePage'
 import ClientCardsPage from './pages/client/ClientCardsPage'
 import ClientLoansPage from './pages/client/ClientLoansPage'
+import ClientRecipientsPage from './pages/client/ClientRecipientsPage'
 import SetPasswordPage from './pages/employee/SetPasswordPage'
 import ResetPasswordPage from './pages/employee/ResetPasswordPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -44,6 +46,7 @@ function App() {
       <ClientAuthProvider>
       <ClientAccountsProvider>
       <ClientPaymentsProvider>
+      <RecipientsProvider>
       <EmployeesProvider>
       <ClientsProvider>
       <AccountsProvider>
@@ -84,12 +87,14 @@ function App() {
           <Route path="/client/exchange" element={<ClientExchangePage />} />
           <Route path="/client/cards" element={<ClientCardsPage />} />
           <Route path="/client/loans" element={<ClientLoansPage />} />
+          <Route path="/client/recipients" element={<ClientRecipientsPage />} />
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </AccountsProvider>
       </ClientsProvider>
       </EmployeesProvider>
+      </RecipientsProvider>
       </ClientPaymentsProvider>
       </ClientAccountsProvider>
       </ClientAuthProvider>

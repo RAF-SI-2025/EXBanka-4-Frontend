@@ -7,12 +7,7 @@ import { useClientAccounts } from '../../context/ClientAccountsContext'
 import { useClientPayments } from '../../context/ClientPaymentsContext'
 import { NAV_ITEMS } from '../../layouts/ClientPortalLayout'
 import { fmt } from '../../utils/formatting'
-
-const MOCK_RECIPIENTS = [
-  { id: 1, name: 'Ivan Petrović' },
-  { id: 2, name: 'Ignjat Nikolić' },
-  { id: 3, name: 'Andrija Jovanović' },
-]
+import { useRecipients } from '../../context/RecipientsContext'
 
 const EXCHANGE_RATE = 117.35
 
@@ -152,6 +147,7 @@ export default function ClientHomePage() {
   const { clientUser, clientLogout } = useClientAuth()
   const { accounts } = useClientAccounts()
   const { payments } = useClientPayments()
+  const { recipients } = useRecipients()
   const navigate = useNavigate()
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [rsd, setRsd] = useState('')
@@ -387,11 +383,20 @@ export default function ClientHomePage() {
 
                   {/* ③ Quick payment — below balance */}
                   <div style={{ gridArea: 'quickpay' }} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl p-5 flex flex-col">
-                    <p className="text-xs tracking-widest uppercase text-slate-400 dark:text-slate-500 mb-4">Quick payment</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-xs tracking-widest uppercase text-slate-400 dark:text-slate-500">Quick payment</p>
+                      <button
+                        onClick={() => navigate('/client/recipients')}
+                        className="text-xs tracking-widest uppercase text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                      >
+                        All
+                      </button>
+                    </div>
                     <div className="flex-1 space-y-2">
-                      {MOCK_RECIPIENTS.map((r) => (
+                      {recipients.slice(0, 3).map((r) => (
                         <button
                           key={r.id}
+                          onClick={() => navigate('/client/payments/new', { state: { recipient: r } })}
                           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-slate-100 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-700 hover:bg-violet-50/60 dark:hover:bg-violet-900/20 transition-all text-left"
                         >
                           <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
@@ -400,8 +405,14 @@ export default function ClientHomePage() {
                           <span className="text-sm text-slate-700 dark:text-slate-300 font-light">{r.name}</span>
                         </button>
                       ))}
+                      {recipients.length === 0 && (
+                        <p className="text-xs text-slate-400 dark:text-slate-500 font-light px-1">No saved recipients yet.</p>
+                      )}
                     </div>
-                    <button className="mt-3 w-full py-2 border border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-xs tracking-widest uppercase text-slate-400 hover:border-violet-400 hover:text-violet-500 dark:hover:border-violet-600 dark:hover:text-violet-400 transition-all">
+                    <button
+                      onClick={() => navigate('/client/recipients')}
+                      className="mt-3 w-full py-2 border border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-xs tracking-widest uppercase text-slate-400 hover:border-violet-400 hover:text-violet-500 dark:hover:border-violet-600 dark:hover:text-violet-400 transition-all"
+                    >
                       + Add recipient
                     </button>
                   </div>
