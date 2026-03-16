@@ -5,6 +5,7 @@ import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useClientPayments } from '../../context/ClientPaymentsContext'
 import { PAYMENT_STATUSES, PAYMENT_STATUS_STYLES } from '../../models/Payment'
 import { fmt } from '../../utils/formatting'
+import Spinner from '../../components/Spinner'
 
 const STATUS_OPTIONS = ['all', ...PAYMENT_STATUSES]
 
@@ -19,7 +20,7 @@ function StatusBadge({ status }) {
 export default function ClientPaymentsPage() {
   useWindowTitle('Payments | AnkaBanka')
   const navigate = useNavigate()
-  const { payments } = useClientPayments()
+  const { payments, loading } = useClientPayments()
 
   const [filterDate,      setFilterDate]      = useState('')
   const [filterAmountMin, setFilterAmountMin] = useState('')
@@ -60,6 +61,8 @@ export default function ClientPaymentsPage() {
           </button>
         </div>
         <div className="w-8 h-px bg-violet-500 dark:bg-violet-400 mb-8" />
+
+        {loading ? <Spinner /> : <>
 
         {/* Filters */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 mb-6">
@@ -168,6 +171,7 @@ export default function ClientPaymentsPage() {
         <p className="text-xs text-slate-400 dark:text-slate-500 mt-3 text-right">
           {filtered.length} of {payments.length} payments
         </p>
+        </>}
       </div>
     </ClientPortalLayout>
   )

@@ -5,6 +5,7 @@ import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useClientAuth } from '../../context/ClientAuthContext'
 import { useClientAccounts } from '../../context/ClientAccountsContext'
 import { fmt } from '../../utils/formatting'
+import Spinner from '../../components/Spinner'
 
 function Row({ label, value, highlight }) {
   return (
@@ -30,7 +31,7 @@ export default function ClientAccountDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { clientUser } = useClientAuth()
-  const { accounts } = useClientAccounts()
+  const { accounts, loading } = useClientAccounts()
 
   const account = accounts.find((a) => a.id === Number(id))
 
@@ -39,6 +40,14 @@ export default function ClientAccountDetailPage() {
   const [nameInput, setNameInput] = useState(accountName)
 
   useWindowTitle(account ? `${accountName} | AnkaBanka` : 'Account | AnkaBanka')
+
+  if (loading) {
+    return (
+      <ClientPortalLayout>
+        <Spinner />
+      </ClientPortalLayout>
+    )
+  }
 
   if (!account) {
     return (

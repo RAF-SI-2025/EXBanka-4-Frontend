@@ -3,11 +3,12 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useClientAccounts } from '../../context/ClientAccountsContext'
 import { fmt } from '../../utils/formatting'
+import Spinner from '../../components/Spinner'
 
 export default function ClientAccountsOverviewPage() {
   useWindowTitle('Accounts | AnkaBanka')
   const navigate = useNavigate()
-  const { accounts } = useClientAccounts()
+  const { accounts, loading } = useClientAccounts()
 
   const sorted = [...accounts].sort((a, b) => b.availableBalance - a.availableBalance)
 
@@ -18,7 +19,7 @@ export default function ClientAccountsOverviewPage() {
         <h1 className="font-serif text-3xl font-light text-slate-900 dark:text-white mb-1">Accounts</h1>
         <div className="w-8 h-px bg-violet-500 dark:bg-violet-400 mb-8" />
 
-        <div className="space-y-3">
+        {loading ? <Spinner /> : <div className="space-y-3">
           {sorted.map((account) => (
             <button
               key={account.id}
@@ -66,7 +67,7 @@ export default function ClientAccountsOverviewPage() {
               </div>
             </button>
           ))}
-        </div>
+        </div>}
       </div>
     </ClientPortalLayout>
   )

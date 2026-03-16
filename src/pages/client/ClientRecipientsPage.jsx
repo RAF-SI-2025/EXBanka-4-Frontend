@@ -4,6 +4,7 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useRecipients } from '../../context/RecipientsContext'
 import { isValidAccountNumber } from '../../models/Recipient'
+import Spinner from '../../components/Spinner'
 
 // ─── Shared form component ────────────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ function Modal({ title, onClose, children }) {
 export default function ClientRecipientsPage() {
   useWindowTitle('Recipients | AnkaBanka')
   const navigate = useNavigate()
-  const { recipients, addRecipient, updateRecipient, deleteRecipient, reorderRecipients } = useRecipients()
+  const { recipients, loading, addRecipient, updateRecipient, deleteRecipient, reorderRecipients } = useRecipients()
   const [dragIndex, setDragIndex] = useState(null)
   const [dropIndex, setDropIndex] = useState(null)
 
@@ -153,6 +154,8 @@ export default function ClientRecipientsPage() {
           </button>
         </div>
         <div className="w-8 h-px bg-violet-500 dark:bg-violet-400 mb-8" />
+
+        {loading && <Spinner />}
 
         {/* Table */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
