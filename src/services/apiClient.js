@@ -48,14 +48,36 @@ function flushQueue(error, token) {
   waitingQueue = []
 }
 
+const API_ERROR_MESSAGES = {
+  400: 'Bad request. Please check the submitted data.',
+  403: 'You do not have permission to perform this action.',
+  404: 'The requested resource was not found.',
+  409: 'Conflict. This resource already exists or cannot be modified.',
+  500: 'Server error. Please try again later.',
+  502: 'Service is currently unreachable. Please try again shortly.',
+  503: 'Service unavailable. Please try again later.',
+  504: 'The request timed out. Please try again.',
+}
+
+function dispatchApiError(status, message) {
+  window.dispatchEvent(new CustomEvent('api:error', { detail: { status, message } }))
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
+    const status = error.response?.status
+
+    // Dispatch user-friendly error notifications for non-401 errors.
+    if (status && status !== 401) {
+      const message = API_ERROR_MESSAGES[status] ?? 'An unexpected error occurred.'
+      dispatchApiError(status, message)
+    }
 
     // Only handle 401; let everything else propagate normally.
     // _retry flag prevents retrying the same request twice.
-    if (error.response?.status !== 401 || original._retry) {
+    if (status !== 401 || original._retry) {
       return Promise.reject(error)
     }
 

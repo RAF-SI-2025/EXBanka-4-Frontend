@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
+import { ApiErrorProvider } from './context/ApiErrorContext'
 import { ClientAuthProvider } from './context/ClientAuthContext'
 import { EmployeesProvider } from './context/EmployeesContext'
 import { ClientsProvider } from './context/ClientsContext'
@@ -42,6 +43,7 @@ import NotFoundPage from './pages/NotFoundPage'
 function App() {
   return (
     <ThemeProvider>
+      <ApiErrorProvider>
       <AuthProvider>
       <ClientAuthProvider>
       <ClientAccountsProvider>
@@ -99,6 +101,7 @@ function App() {
       </ClientAccountsProvider>
       </ClientAuthProvider>
       </AuthProvider>
+      </ApiErrorProvider>
     </ThemeProvider>
   )
 }
