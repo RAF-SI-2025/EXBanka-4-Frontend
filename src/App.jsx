@@ -24,6 +24,7 @@ import ClientAccountsPage from './pages/employee/ClientAccountsPage'
 import AccountDetailPage from './pages/employee/AccountDetailPage'
 import NewAccountPage from './pages/employee/NewAccountPage'
 import ClientLoginPage from './pages/client/ClientLoginPage'
+import ClientActivatePage from './pages/client/ClientActivatePage'
 import ClientHomePage from './pages/client/ClientHomePage'
 import ClientAccountsOverviewPage from './pages/client/ClientAccountsOverviewPage'
 import ClientAccountDetailPage from './pages/client/ClientAccountDetailPage'
@@ -78,6 +79,7 @@ function App() {
 
           {/* Client portal — full-screen, no layout */}
           <Route path="/client/login" element={<ClientLoginPage />} />
+          <Route path="/client/activate" element={<ClientActivatePage />} />
           <Route path="/client" element={<ClientHomePage />} />
           <Route path="/client/accounts" element={<ClientAccountsOverviewPage />} />
           <Route path="/client/accounts/:id" element={<ClientAccountDetailPage />} />

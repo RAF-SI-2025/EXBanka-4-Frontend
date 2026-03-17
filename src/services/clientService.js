@@ -1,44 +1,47 @@
-import { mockClients } from '../mocks/clients'
-import { Client } from '../models/Client'
-
-// In-memory store so updates persist within a session.
-// Replace the bodies of these functions with real API calls once the backend is ready.
-let _clients = mockClients.map((c) => new Client(c))
-let _nextId = _clients.length + 1
+import { apiClient } from './apiClient'
+import { clientFromApi } from '../models/Client'
 
 export const clientService = {
-  async getClients() {
-    return [..._clients]
+  async getClients({ page = 1, pageSize = 100 } = {}) {
+    const { data } = await apiClient.get('/clients', {
+      params: { page, page_size: pageSize },
+    })
+    return data.clients.map(clientFromApi)
   },
 
   async getClientById(id) {
-    const client = _clients.find((c) => c.id === id)
-    if (!client) throw new Error(`Client ${id} not found`)
-    return { ...client }
+    const { data } = await apiClient.get(`/clients/${id}`)
+    return clientFromApi(data)
   },
 
-  async createClient(data) {
-    const client = new Client({ ...data, id: _nextId++, active: true, bankAccounts: [] })
-    _clients = [..._clients, client]
-    return client
+  async createClient(formData) {
+    const { data } = await apiClient.post('/clients', {
+      first_name:    formData.firstName,
+      last_name:     formData.lastName,
+      jmbg:          formData.jmbg,
+      date_of_birth: formData.dateOfBirth,
+      gender:        formData.gender,
+      email:         formData.email,
+      phone_number:  formData.phoneNumber,
+      address:       formData.address,
+      username:      formData.username,
+    })
+    return clientFromApi(data)
   },
 
   async updateClient(id, fields) {
-    _clients = _clients.map((c) => {
-      if (c.id !== id) return c
-      return new Client({
-        ...c,
-        firstName:   fields.firstName   ?? c.firstName,
-        lastName:    fields.lastName    ?? c.lastName,
-        email:       fields.email       ?? c.email,
-        phoneNumber: fields.phoneNumber ?? c.phoneNumber,
-        address:     fields.address     ?? c.address,
-        dateOfBirth: fields.dateOfBirth ?? c.dateOfBirth,
-        gender:      fields.gender      ?? c.gender,
-        username:    fields.username    ?? c.username,
-        active:      fields.active      ?? c.active,
-      })
+    const { data } = await apiClient.put(`/clients/${id}`, {
+      first_name:    fields.firstName,
+      last_name:     fields.lastName,
+      jmbg:          fields.jmbg,
+      date_of_birth: fields.dateOfBirth,
+      gender:        fields.gender,
+      email:         fields.email,
+      phone_number:  fields.phoneNumber,
+      address:       fields.address,
+      username:      fields.username,
+      active:        fields.active,
     })
-    return _clients.find((c) => c.id === id)
+    return clientFromApi(data)
   },
 }

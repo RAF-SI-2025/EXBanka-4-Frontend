@@ -35,16 +35,16 @@ export class Client {
 export function clientFromApi(data) {
   return new Client({
     id:          data.id,
-    firstName:   data.ime,
-    lastName:    data.prezime,
+    firstName:   data.first_name,
+    lastName:    data.last_name,
     jmbg:        data.jmbg,
     email:       data.email,
-    phoneNumber: data.broj_telefona,
-    address:     data.adresa,
-    dateOfBirth: data.datum_rodjenja,
-    gender:      data.pol,
+    phoneNumber: data.phone_number,
+    address:     data.address,
+    dateOfBirth: data.date_of_birth,
+    gender:      data.gender,
     username:    data.username,
-    active:      data.aktivan,
-    bankAccounts: data.bank_accounts ?? [],
+    active:      data.active,
+    bankAccounts: [],
   })
 }
