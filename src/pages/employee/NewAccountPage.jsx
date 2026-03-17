@@ -142,11 +142,12 @@ export default function NewAccountPage() {
               {clientsLoading ? (
                 <p className="text-sm text-slate-400 dark:text-slate-500">Loading clients…</p>
               ) : (
+                <div className="relative">
                 <select
                   name="ownerId"
                   value={form.ownerId}
                   onChange={handleChange}
-                  className={`input-field${errors.ownerId ? ' input-error' : ''}`}
+                  className={`input-field appearance-none pr-10${errors.ownerId ? ' input-error' : ''}`}
                 >
                   <option value="">Select a client…</option>
                   {[...clients]
@@ -157,6 +158,12 @@ export default function NewAccountPage() {
                       </option>
                     ))}
                 </select>
+                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                </div>
               )}
             </Field>
             <div className="mt-3">
@@ -256,7 +263,7 @@ export default function NewAccountPage() {
             </button>
             <Link
               to="/admin/accounts"
-              className="px-5 py-2 text-xs tracking-widest uppercase border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-violet-500 dark:hover:border-violet-400 rounded-lg transition-colors"
+              className="inline-flex items-center justify-center px-5 py-2 text-xs tracking-widest uppercase border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-violet-500 dark:hover:border-violet-400 rounded-lg transition-colors"
             >
               Cancel
             </Link>

@@ -2,15 +2,17 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { useClients } from '../../context/ClientsContext'
+import { useAccounts } from '../../context/AccountsContext'
 
 export default function ClientsPage() {
   useWindowTitle('Clients | AnkaBanka')
   const navigate = useNavigate()
   const { clients, loading, error, reload } = useClients()
+  const { accounts, reload: reloadAccounts } = useAccounts()
 
   const [query, setQuery] = useState('')
 
-  useEffect(() => { reload() }, [])
+  useEffect(() => { reload(); reloadAccounts() }, [])
 
   const sorted = [...clients].sort((a, b) => a.lastName.localeCompare(b.lastName, 'sr'))
 
@@ -105,7 +107,14 @@ export default function ClientsPage() {
                         i % 2 === 0 ? '' : 'bg-slate-50/50 dark:bg-slate-800/20'
                       }`}
                     >
-                      <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{client.fullName}</td>
+                      <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">
+                        <span className="flex items-center gap-2">
+                          {client.fullName}
+                          {!accounts.some((a) => a.ownerId === client.id) && (
+                            <span title="No accounts linked" className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-white text-xs font-bold leading-none shrink-0">!</span>
+                          )}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{client.email}</td>
                       <td className="px-6 py-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">{client.phoneNumber}</td>
                       <td className="px-6 py-4">

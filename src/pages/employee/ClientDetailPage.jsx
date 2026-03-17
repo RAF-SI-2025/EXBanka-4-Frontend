@@ -2,16 +2,20 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { useClients } from '../../context/ClientsContext'
+import { useAccounts } from '../../context/AccountsContext'
 
 export default function ClientDetailPage() {
   const { id } = useParams()
   const { clients, loading, reload, updateClient } = useClients()
+  const { accounts, reload: reloadAccounts } = useAccounts()
 
   useEffect(() => {
     if (clients.length === 0 && !loading) reload()
+    if (accounts.length === 0) reloadAccounts()
   }, [])
 
   const client = clients.find((c) => c.id === Number(id))
+  const clientAccounts = accounts.filter((a) => a.ownerId === Number(id))
 
   useWindowTitle(client ? `${client.fullName} | AnkaBanka` : 'Client | AnkaBanka')
 
@@ -156,11 +160,11 @@ export default function ClientDetailPage() {
               </Section>
 
               <Section title="Bank Accounts">
-                {client.bankAccounts.length === 0 ? (
+                {clientAccounts.length === 0 ? (
                   <p className="text-sm text-slate-400 dark:text-slate-500 py-3">No accounts linked.</p>
                 ) : (
-                  client.bankAccounts.map((acc) => (
-                    <Row key={acc} label="Account" value={acc} />
+                  clientAccounts.map((acc) => (
+                    <Row key={acc.id} label={acc.accountName ?? acc.accountNumber} value={acc.accountNumber} />
                   ))
                 )}
               </Section>
@@ -202,11 +206,11 @@ export default function ClientDetailPage() {
               </Section>
 
               <Section title="Bank Accounts">
-                {client.bankAccounts.length === 0 ? (
+                {clientAccounts.length === 0 ? (
                   <p className="text-sm text-slate-400 dark:text-slate-500 py-3">No accounts linked.</p>
                 ) : (
-                  client.bankAccounts.map((acc) => (
-                    <Row key={acc} label="Account" value={acc} />
+                  clientAccounts.map((acc) => (
+                    <Row key={acc.id} label={acc.accountName ?? acc.accountNumber} value={acc.accountNumber} />
                   ))
                 )}
               </Section>

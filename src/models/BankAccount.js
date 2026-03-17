@@ -85,3 +85,26 @@ export const BUSINESS_SUBTYPES = [
   { value: 'ad',         label: 'AD (Joint Stock)' },
   { value: 'foundation', label: 'Foundation' },
 ]
+
+// Maps a backend account response to a BankAccount instance.
+// Used by both accountService (create response) and clientAccountService (list/detail).
+export function bankAccountFromApi(data) {
+  return new BankAccount({
+    id:               data.id ?? data.accountId,
+    accountNumber:    data.accountNumber,
+    accountName:      data.accountName    ?? null,
+    ownerId:          data.ownerId        ?? null,
+    ownerFirstName:   data.ownerFirstName ?? null,
+    ownerLastName:    data.ownerLastName  ?? null,
+    createdByEmployeeId: data.employeeId  ?? null,
+    currency:         data.currency ?? data.currencyCode ?? 'RSD',
+    type:             data.accountType ? data.accountType.toLowerCase() : null,
+    status:           data.status ? data.status.toLowerCase() : 'active',
+    balance:          data.balance        ?? 0,
+    availableBalance: data.availableBalance ?? 0,
+    dailyLimit:       data.dailyLimit     ?? 250000,
+    monthlyLimit:     data.monthlyLimit   ?? 1000000,
+    dailySpending:    data.dailySpent     ?? 0,
+    monthlySpending:  data.monthlySpent   ?? 0,
+  })
+}

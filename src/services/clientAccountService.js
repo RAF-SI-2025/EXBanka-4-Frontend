@@ -1,29 +1,18 @@
-/**
- * Client account service (mock)
- *
- * Returns the logged-in client's own accounts.
- * Replace function bodies with real API calls when backend is ready.
- */
-
-import { mockClientAccounts } from '../mocks/clientAccounts'
-
-// In-memory copy so name edits etc. can be persisted within a session
-let _accounts = [...mockClientAccounts]
+import { clientApiClient } from './clientApiClient'
+import { bankAccountFromApi } from '../models/BankAccount'
 
 export const clientAccountService = {
   async getMyAccounts() {
-    return [..._accounts]
+    const { data } = await clientApiClient.get('/api/accounts/my')
+    return data.map(bankAccountFromApi)
   },
 
   async getAccountById(id) {
-    return _accounts.find((a) => a.id === id) ?? null
+    const { data } = await clientApiClient.get(`/api/accounts/${id}`)
+    return bankAccountFromApi({ id, ...data })
   },
 
-  async applyTransfer({ fromAccountId, toAccountId, amount }) {
-    _accounts = _accounts.map((a) => {
-      if (a.id === fromAccountId) return { ...a, balance: a.balance - amount, availableBalance: a.availableBalance - amount }
-      if (a.id === toAccountId)   return { ...a, balance: a.balance + amount, availableBalance: a.availableBalance + amount }
-      return a
-    })
+  async renameAccount(id, newAccountName) {
+    await clientApiClient.put(`/api/accounts/${id}/name`, { newAccountName })
   },
 }
