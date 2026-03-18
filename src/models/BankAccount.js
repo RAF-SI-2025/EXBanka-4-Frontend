@@ -67,6 +67,11 @@ export class BankAccount {
   get isActive() {
     return this.status === 'active'
   }
+
+  // 'current' for RSD accounts, 'foreign' for everything else
+  get currencyType() {
+    return this.currency === 'RSD' ? 'current' : 'foreign'
+  }
 }
 
 // ─── Subtype labels ───────────────────────────────────────────────────────────
@@ -98,7 +103,8 @@ export function bankAccountFromApi(data) {
     ownerLastName:    data.ownerLastName  ?? null,
     createdByEmployeeId: data.employeeId  ?? null,
     currency:         data.currency ?? data.currencyCode ?? 'RSD',
-    type:             data.accountType ? data.accountType.toLowerCase() : null,
+    type:             data.accountType?.toUpperCase() === 'BUSINESS' ? 'business' : 'personal',
+    subtype:          data.accountType ? data.accountType.toLowerCase() : null,
     status:           data.status ? data.status.toLowerCase() : 'active',
     balance:          data.balance        ?? 0,
     availableBalance: data.availableBalance ?? 0,

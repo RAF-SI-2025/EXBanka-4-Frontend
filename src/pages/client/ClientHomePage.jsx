@@ -145,7 +145,7 @@ export default function ClientHomePage() {
   useWindowTitle('AnkaBanka')
   const { dark, toggle } = useTheme()
   const { clientUser, clientLogout } = useClientAuth()
-  const { accounts } = useClientAccounts()
+  const { accounts, reload: reloadAccounts } = useClientAccounts()
   const { payments } = useClientPayments()
   const { recipients } = useRecipients()
   const navigate = useNavigate()
@@ -155,6 +155,10 @@ export default function ClientHomePage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const recentTransactions = payments.slice(0, 5)
+
+  useEffect(() => {
+    if (clientUser) reloadAccounts()
+  }, [clientUser])
 
   useEffect(() => {
     if (clientUser) return
