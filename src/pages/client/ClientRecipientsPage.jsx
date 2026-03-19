@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useRecipients } from '../../context/RecipientsContext'
-import { isValidAccountNumber } from '../../models/Recipient'
+import { isValidAccountNumber, formatAccountNumberInput } from '../../models/Recipient'
 import Spinner from '../../components/Spinner'
 import { useApiError } from '../../context/ApiErrorContext'
 
@@ -15,7 +15,8 @@ function RecipientForm({ initial = { name: '', accountNumber: '' }, onSave, onCa
 
   function handleChange(e) {
     const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
+    const formatted = name === 'accountNumber' ? formatAccountNumberInput(value) : value
+    setForm((prev) => ({ ...prev, [name]: formatted }))
     setErrors((prev) => ({ ...prev, [name]: undefined }))
   }
 

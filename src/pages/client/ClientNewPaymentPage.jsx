@@ -4,7 +4,7 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useClientAccounts } from '../../context/ClientAccountsContext'
 import { fmt } from '../../utils/formatting'
-import { isValidAccountNumber } from '../../models/Recipient'
+import { isValidAccountNumber, formatAccountNumberInput } from '../../models/Recipient'
 
 const EMPTY_FORM = {
   fromAccountId:    '',
@@ -45,7 +45,8 @@ export default function ClientNewPaymentPage() {
 
   function handleChange(e) {
     const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
+    const formatted = name === 'recipientAccount' ? formatAccountNumberInput(value) : value
+    setForm((prev) => ({ ...prev, [name]: formatted }))
     setErrors((prev) => ({ ...prev, [name]: undefined }))
   }
 

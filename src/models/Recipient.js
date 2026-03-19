@@ -18,3 +18,12 @@ export function recipientFromApi(data) {
 export function isValidAccountNumber(value) {
   return /^\d{3}-\d{10,13}-\d{2}$/.test(value.trim())
 }
+
+// Progressively formats digits as XXX-XXXXXXXXXXXXX-XX while typing or on paste.
+// Strips non-digits then inserts dashes at positions 3 and 16.
+export function formatAccountNumberInput(raw) {
+  const digits = raw.replace(/\D/g, '').slice(0, 18)
+  if (digits.length <= 3)  return digits
+  if (digits.length <= 16) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+  return `${digits.slice(0, 3)}-${digits.slice(3, 16)}-${digits.slice(16)}`
+}

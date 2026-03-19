@@ -155,6 +155,7 @@ export default function ClientHomePage() {
   const [eur, setEur] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
+  const myAccountNumbers = new Set(accounts.map((a) => a.accountNumber))
   const recentTransactions = payments.slice(0, 5)
 
   useEffect(() => {
@@ -375,12 +376,21 @@ export default function ClientHomePage() {
                       {recentTransactions.map((p) => (
                         <div key={p.id} onClick={() => navigate(`/client/payments/${p.id}`)} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-white/60 dark:hover:bg-slate-800/40 transition-colors cursor-pointer">
                           <div className="min-w-0">
-                            <p className="text-sm text-slate-700 dark:text-slate-300 font-light truncate">{p.recipient}</p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500">{p.dateTime.split(' ')[0]}</p>
+                            {(() => {
+                              const isOutgoing = myAccountNumbers.has(p.fromAccount)
+                              const otherParty = isOutgoing ? (p.recipient || p.recipientAccount) : p.fromAccount
+                              return <>
+                                <p className="text-sm text-slate-700 dark:text-slate-300 font-light truncate">{p.purpose || otherParty}</p>
+                                <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(p.dateTime).toLocaleDateString('sr-RS')}</p>
+                              </>
+                            })()}
                           </div>
-                          <span className={`text-sm font-medium ml-4 shrink-0 ${p.amount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
-                            {p.amount > 0 ? '+' : ''}{fmt(p.amount)} {p.currency}
-                          </span>
+                          {(() => {
+                            const isOutgoing = myAccountNumbers.has(p.fromAccount)
+                            return <span className={`text-sm font-medium ml-4 shrink-0 ${isOutgoing ? 'text-red-500 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                              {isOutgoing ? '-' : '+'}{fmt(Math.abs(p.amount))} {p.currency}
+                            </span>
+                          })()}
                         </div>
                       ))}
                     </div>

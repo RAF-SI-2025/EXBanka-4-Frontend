@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { clientAccountService } from '../services/clientAccountService'
+import { useClientAuth } from './ClientAuthContext'
 
 const ClientAccountsContext = createContext()
 
 export function ClientAccountsProvider({ children }) {
+  const { clientUser } = useClientAuth()
   const [accounts, setAccounts] = useState([])
-  const [loading, setLoading]   = useState(true)
+  const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
 
   async function reload() {
@@ -32,7 +34,7 @@ export function ClientAccountsProvider({ children }) {
     )
   }
 
-  useEffect(() => { reload() }, [])
+  useEffect(() => { if (clientUser) reload() }, [clientUser])
 
   return (
     <ClientAccountsContext.Provider value={{ accounts, loading, error, reload, renameAccount }}>

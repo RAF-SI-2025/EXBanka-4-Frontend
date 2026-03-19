@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { recipientService } from '../services/recipientService'
+import { useClientAuth } from './ClientAuthContext'
 
 const RecipientsContext = createContext()
 
 export function RecipientsProvider({ children }) {
+  const { clientUser } = useClientAuth()
   const [recipients, setRecipients] = useState([])
-  const [loading, setLoading]       = useState(true)
+  const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState(null)
 
   async function reload() {
@@ -42,7 +44,7 @@ export function RecipientsProvider({ children }) {
     setRecipients(newList)
   }
 
-  useEffect(() => { reload() }, [])
+  useEffect(() => { if (clientUser) reload() }, [clientUser])
 
   return (
     <RecipientsContext.Provider value={{ recipients, loading, error, reload, addRecipient, updateRecipient, deleteRecipient, reorderRecipients }}>

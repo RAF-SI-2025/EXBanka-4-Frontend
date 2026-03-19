@@ -68,9 +68,9 @@ export default function ClientTransfersPage() {
     setLoading(true)
     try {
       await transferService.createTransfer({
-        fromAccountId: Number(form.fromAccountId),
-        toAccountId:   Number(form.toAccountId),
-        amount:        parseFloat(form.amount),
+        fromAccount: fromAccount.accountNumber,
+        toAccount:   toAccount.accountNumber,
+        amount:      parseFloat(form.amount),
       })
       await reloadAccounts()
       addSuccess(`${fmt(parseFloat(form.amount), fromAccount.currency)} transferred to ${toAccount.accountName}.`, 'Transfer Successful')

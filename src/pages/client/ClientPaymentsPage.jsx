@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useClientPayments } from '../../context/ClientPaymentsContext'
+import { useClientAccounts } from '../../context/ClientAccountsContext'
 import { PAYMENT_STATUSES, PAYMENT_STATUS_STYLES } from '../../models/Payment'
 import { fmt } from '../../utils/formatting'
 import Spinner from '../../components/Spinner'
@@ -21,6 +22,8 @@ export default function ClientPaymentsPage() {
   useWindowTitle('Payments | AnkaBanka')
   const navigate = useNavigate()
   const { payments, loading } = useClientPayments()
+  const { accounts } = useClientAccounts()
+  const myAccountNumbers = useMemo(() => new Set(accounts.map((a) => a.accountNumber)), [accounts])
 
   const [filterDate,      setFilterDate]      = useState('')
   const [filterAmountMin, setFilterAmountMin] = useState('')
@@ -152,11 +155,18 @@ export default function ClientPaymentsPage() {
                     onClick={() => navigate(`/client/payments/${p.id}`)}
                     className={`cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${i !== filtered.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}
                   >
-                    <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400 font-light whitespace-nowrap">{p.dateTime}</td>
-                    <td className="px-5 py-3.5 text-sm text-slate-900 dark:text-white font-light">{p.recipient}</td>
-                    <td className={`px-5 py-3.5 text-sm font-medium text-right whitespace-nowrap ${p.amount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>
-                      {p.amount > 0 ? '+' : ''}{fmt(p.amount)}
-                    </td>
+                    {(() => {
+                      const isOutgoing = myAccountNumbers.has(p.fromAccount)
+                      const otherParty = isOutgoing ? (p.recipient || p.recipientAccount) : p.fromAccount
+                      const label = p.purpose || otherParty
+                      return <>
+                        <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400 font-light whitespace-nowrap">{new Date(p.dateTime).toLocaleString('sr-RS')}</td>
+                        <td className="px-5 py-3.5 text-sm text-slate-900 dark:text-white font-light">{label}</td>
+                        <td className={`px-5 py-3.5 text-sm font-medium text-right whitespace-nowrap ${isOutgoing ? 'text-red-500 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          {isOutgoing ? '-' : '+'}{fmt(Math.abs(p.amount))}
+                        </td>
+                      </>
+                    })()}
                     <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400 font-light">{p.currency}</td>
                     <td className="px-5 py-3.5">
                       <StatusBadge status={p.status} />

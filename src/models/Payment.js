@@ -2,6 +2,7 @@ export class Payment {
   constructor({
     id,
     dateTime,
+    fromAccount,
     recipient,
     recipientAccount,
     amount,
@@ -13,6 +14,7 @@ export class Payment {
   }) {
     this.id               = id
     this.dateTime         = dateTime
+    this.fromAccount      = fromAccount
     this.recipient        = recipient
     this.recipientAccount = recipientAccount
     this.amount           = amount           ?? 0
@@ -33,6 +35,7 @@ export function paymentFromApi(data) {
   return new Payment({
     id:               data.id,
     dateTime:         data.dateTime       ?? data.date_time,
+    fromAccount:      data.fromAccount,
     recipient:        data.recipient,
     recipientAccount: data.recipientAccount ?? data.recipient_account,
     amount:           data.amount,
