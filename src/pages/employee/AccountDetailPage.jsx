@@ -4,6 +4,7 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import { useAccounts } from '../../context/AccountsContext'
 import { accountService } from '../../services/accountService'
 import { BankAccount } from '../../models/BankAccount'
+// TODO: replace with employee-scoped endpoint once backend adds GET /api/admin/accounts/:id
 import { fmt } from '../../utils/formatting'
 import Spinner from '../../components/Spinner'
 import { useApiError } from '../../context/ApiErrorContext'
@@ -39,16 +40,13 @@ export default function AccountDetailPage() {
   const { id } = useParams()
   const { addSuccess } = useApiError()
   const { accounts, loading: listLoading, reload } = useAccounts()
-  const [detail, setDetail]             = useState(null)   // enriched from detail endpoint if available
+  const [detail, setDetail]             = useState(null)
   const [editingLimits, setEditingLimits] = useState(false)
   const [limitForm, setLimitForm]       = useState({ dailyLimit: '', monthlyLimit: '' })
   const [limitErrors, setLimitErrors]   = useState({})
   const [limitsLoading, setLimitsLoading] = useState(false)
 
-  // Base account from the list (always available for employees)
-  const listAccount = accounts.find((a) => a.id === Number(id))
-  // Use enriched detail if available, otherwise fall back to list data
-  const account = detail ?? listAccount
+  const account = detail ?? accounts.find((a) => a.id === Number(id))
 
   useWindowTitle(account ? `${account.accountNumber} | AnkaBanka` : 'Account | AnkaBanka')
 
@@ -56,24 +54,11 @@ export default function AccountDetailPage() {
     if (accounts.length === 0 && !listLoading) reload()
   }, [])
 
-  // Try to fetch full details — silently ignore 403 (ownership check on backend)
-  // until a dedicated employee detail endpoint is available.
   useEffect(() => {
-    accountService.getAccountById(id)
-      .then((data) => {
-        setDetail(data)
-        setLimitForm({ dailyLimit: String(data.dailyLimit), monthlyLimit: String(data.monthlyLimit) })
-      })
-      .catch(() => {
-        // Falls back to list data; limits form will be set once listAccount is available
-      })
-  }, [id])
-
-  useEffect(() => {
-    if (!detail && listAccount) {
-      setLimitForm({ dailyLimit: String(listAccount.dailyLimit), monthlyLimit: String(listAccount.monthlyLimit) })
+    if (account && !detail) {
+      setLimitForm({ dailyLimit: String(account.dailyLimit), monthlyLimit: String(account.monthlyLimit) })
     }
-  }, [listAccount, detail])
+  }, [account])
 
   if (listLoading && !account) {
     return (
