@@ -8,6 +8,11 @@ import { PERSONAL_SUBTYPES, BUSINESS_SUBTYPES } from '../../models/BankAccount'
 
 const FOREIGN_CURRENCIES = ['EUR', 'USD', 'GBP', 'CHF', 'JPY', 'CAD', 'AUD']
 
+const ACTIVITY_CODES = [
+  '01.1', '10.1', '41.2', '45.1', '46.1', '47.1', '56.1',
+  '62.01', '62.02', '64.19', '69.1', '70.2', '85.3', '86.1', '96.0',
+]
+
 const EMPTY_FORM = {
   ownerId:      '',
   type:         'personal',
@@ -17,10 +22,39 @@ const EMPTY_FORM = {
   currency:     'RSD',
 }
 
+const EMPTY_COMPANY = {
+  name:               '',
+  registrationNumber: '',
+  pib:                '',
+  activityCode:       '',
+  address:            '',
+}
+
+const EMPTY_LIMITS = {
+  dailyLimit:   '',
+  monthlyLimit: '',
+}
+
 function defaultName(type, subtype) {
   const list = type === 'personal' ? PERSONAL_SUBTYPES : BUSINESS_SUBTYPES
   const found = list.find((s) => s.value === subtype)
   return found ? `${found.label} Account` : ''
+}
+
+function defaultLimits(type, subtype) {
+  if (type === 'business') {
+    if (subtype === 'foundation') return { dailyLimit: '100000', monthlyLimit: '1000000' }
+    return { dailyLimit: '500000', monthlyLimit: '5000000' }
+  }
+  switch (subtype) {
+    case 'standard':   return { dailyLimit: '250000', monthlyLimit: '1000000' }
+    case 'savings':    return { dailyLimit: '50000',  monthlyLimit: '200000'  }
+    case 'pensioner':  return { dailyLimit: '50000',  monthlyLimit: '200000'  }
+    case 'youth':      return { dailyLimit: '25000',  monthlyLimit: '100000'  }
+    case 'student':    return { dailyLimit: '25000',  monthlyLimit: '100000'  }
+    case 'unemployed': return { dailyLimit: '10000',  monthlyLimit: '50000'   }
+    default:           return { dailyLimit: '250000', monthlyLimit: '1000000' }
+  }
 }
 
 export default function NewAccountPage() {
@@ -31,8 +65,10 @@ export default function NewAccountPage() {
   const { clients, loading: clientsLoading, reload: reloadClients } = useClients()
   const { user } = useAuth()
 
-  const [form, setForm]     = useState({ ...EMPTY_FORM, ownerId: searchParams.get('clientId') ?? '' })
-  const [errors, setErrors] = useState({})
+  const [form, setForm]       = useState({ ...EMPTY_FORM, ownerId: searchParams.get('clientId') ?? '' })
+  const [company, setCompany] = useState(EMPTY_COMPANY)
+  const [limits, setLimits]   = useState(EMPTY_LIMITS)
+  const [errors, setErrors]   = useState({})
   const [success, setSuccess] = useState(null)
 
   useEffect(() => {
@@ -52,6 +88,8 @@ export default function NewAccountPage() {
         currencyType: 'current',
         currency:     'RSD',
       }))
+      setCompany(EMPTY_COMPANY)
+      setLimits(EMPTY_LIMITS)
       return
     }
 
@@ -61,6 +99,7 @@ export default function NewAccountPage() {
         subtype:     value,
         accountName: defaultName(prev.type, value),
       }))
+      setLimits(defaultLimits(form.type, value))
       return
     }
 
@@ -76,12 +115,37 @@ export default function NewAccountPage() {
     setForm((prev) => ({ ...prev, [name]: value }))
   }
 
+  function handleCompanyChange(e) {
+    const { name, value } = e.target
+    setErrors((prev) => ({ ...prev, [`company_${name}`]: false }))
+    setCompany((prev) => ({ ...prev, [name]: value }))
+  }
+
+  function handleLimitsChange(e) {
+    const { name, value } = e.target
+    setErrors((prev) => ({ ...prev, [name]: false }))
+    setLimits((prev) => ({ ...prev, [name]: value }))
+  }
+
   function validate() {
     const errs = {}
-    if (!form.ownerId)  errs.ownerId  = true
-    if (!form.subtype)  errs.subtype  = true
+    if (!form.ownerId)            errs.ownerId     = true
+    if (!form.subtype)            errs.subtype     = true
     if (!form.accountName.trim()) errs.accountName = true
     if (form.type === 'personal' && form.currencyType === 'foreign' && !form.currency) errs.currency = true
+
+    if (form.type === 'business') {
+      if (!company.name.trim())               errs.company_name               = true
+      if (!company.registrationNumber.trim()) errs.company_registrationNumber = true
+      if (!company.pib.trim())               errs.company_pib               = true
+    }
+
+    const daily   = parseFloat(limits.dailyLimit)
+    const monthly = parseFloat(limits.monthlyLimit)
+    if (!limits.dailyLimit   || isNaN(daily)   || daily   <= 0) errs.dailyLimit   = true
+    if (!limits.monthlyLimit || isNaN(monthly) || monthly <= 0) errs.monthlyLimit = true
+    if (!errs.dailyLimit && !errs.monthlyLimit && daily > monthly) errs.dailyLimit = true
+
     return errs
   }
 
@@ -103,6 +167,17 @@ export default function NewAccountPage() {
         currencyType:        form.currencyType,
         currency:            form.currency,
         createdByEmployeeId: user?.id ?? null,
+        dailyLimit:          parseFloat(limits.dailyLimit),
+        monthlyLimit:        parseFloat(limits.monthlyLimit),
+        ...(form.type === 'business' && {
+          companyData: {
+            name:               company.name.trim(),
+            registrationNumber: company.registrationNumber.trim(),
+            pib:                company.pib.trim(),
+            activityCode:       company.activityCode || null,
+            address:            company.address.trim() || null,
+          },
+        }),
       })
       setSuccess({ accountNumber: created.accountNumber, ownerEmail: owner.email, ownerName: owner.fullName })
     } catch {
@@ -129,7 +204,7 @@ export default function NewAccountPage() {
             </p>
             <div className="flex gap-3 justify-center">
               <button
-                onClick={() => { setForm(EMPTY_FORM); setSuccess(null) }}
+                onClick={() => { setForm(EMPTY_FORM); setCompany(EMPTY_COMPANY); setLimits(EMPTY_LIMITS); setSuccess(null) }}
                 className="px-5 py-2 text-xs tracking-widest uppercase border border-violet-600 dark:border-violet-400 text-violet-600 dark:text-violet-400 hover:bg-violet-600 dark:hover:bg-violet-500 hover:text-white rounded-lg transition-colors"
               >
                 New Account
@@ -215,7 +290,7 @@ export default function NewAccountPage() {
             </div>
           </div>
 
-          {/* Account details */}
+          {/* Account Details */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-8 shadow-sm">
             <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-6">Account Details</p>
 
@@ -265,7 +340,7 @@ export default function NewAccountPage() {
                 </div>
               </Field>
 
-              {/* Account name — auto-filled from subtype, editable */}
+              {/* Account name */}
               <Field label="Account Name *" error={errors.accountName}>
                 <input
                   type="text"
@@ -299,15 +374,9 @@ export default function NewAccountPage() {
                 </div>
               </Field>
 
-              {/* Currency display / selection */}
               {form.currencyType === 'current' && (
                 <Field label="Currency">
-                  <input
-                    type="text"
-                    value="RSD"
-                    disabled
-                    className="input-field opacity-50 cursor-not-allowed"
-                  />
+                  <input type="text" value="RSD" disabled className="input-field opacity-50 cursor-not-allowed" />
                 </Field>
               )}
 
@@ -327,6 +396,128 @@ export default function NewAccountPage() {
                 </Field>
               )}
 
+            </div>
+          </div>
+
+          {/* Company Details — business accounts only */}
+          {form.type === 'business' && (
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-8 shadow-sm">
+              <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-6">Company Details</p>
+              <div className="space-y-5">
+
+                <Field label="Company Name *" error={errors.company_name}>
+                  <input
+                    type="text"
+                    name="name"
+                    value={company.name}
+                    onChange={handleCompanyChange}
+                    placeholder="e.g. Acme d.o.o."
+                    className={`input-field${errors.company_name ? ' input-error' : ''}`}
+                  />
+                </Field>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Registration Number *" error={errors.company_registrationNumber}>
+                    <input
+                      type="text"
+                      name="registrationNumber"
+                      value={company.registrationNumber}
+                      onChange={handleCompanyChange}
+                      placeholder="e.g. 12345678"
+                      className={`input-field font-mono${errors.company_registrationNumber ? ' input-error' : ''}`}
+                    />
+                  </Field>
+
+                  <Field label="PIB *" error={errors.company_pib}>
+                    <input
+                      type="text"
+                      name="pib"
+                      value={company.pib}
+                      onChange={handleCompanyChange}
+                      placeholder="e.g. 123456789"
+                      className={`input-field font-mono${errors.company_pib ? ' input-error' : ''}`}
+                    />
+                  </Field>
+                </div>
+
+                <Field label="Activity Code">
+                  <div className="relative">
+                    <select
+                      name="activityCode"
+                      value={company.activityCode}
+                      onChange={handleCompanyChange}
+                      className="input-field appearance-none pr-10"
+                    >
+                      <option value="">Select activity code…</option>
+                      {ACTIVITY_CODES.map((code) => (
+                        <option key={code} value={code}>{code}</option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </Field>
+
+                <Field label="Address">
+                  <input
+                    type="text"
+                    name="address"
+                    value={company.address}
+                    onChange={handleCompanyChange}
+                    placeholder="Street, City"
+                    className="input-field"
+                  />
+                </Field>
+
+              </div>
+            </div>
+          )}
+
+          {/* Limits */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-8 shadow-sm">
+            <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-1">Transaction Limits</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mb-6">
+              Auto-filled based on account subtype. You can override these values.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Daily Limit *" error={errors.dailyLimit}>
+                <div className="relative">
+                  <input
+                    type="number"
+                    name="dailyLimit"
+                    value={limits.dailyLimit}
+                    onChange={handleLimitsChange}
+                    placeholder="250000"
+                    min="1"
+                    step="1"
+                    className={`input-field pr-14${errors.dailyLimit ? ' input-error' : ''}`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 pointer-events-none">
+                    RSD
+                  </span>
+                </div>
+              </Field>
+
+              <Field label="Monthly Limit *" error={errors.monthlyLimit}>
+                <div className="relative">
+                  <input
+                    type="number"
+                    name="monthlyLimit"
+                    value={limits.monthlyLimit}
+                    onChange={handleLimitsChange}
+                    placeholder="1000000"
+                    min="1"
+                    step="1"
+                    className={`input-field pr-14${errors.monthlyLimit ? ' input-error' : ''}`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 pointer-events-none">
+                    RSD
+                  </span>
+                </div>
+              </Field>
             </div>
           </div>
 

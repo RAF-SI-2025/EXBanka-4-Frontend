@@ -22,7 +22,7 @@ export const accountService = {
     return bankAccountFromApi({ id, ...data })
   },
 
-  async createAccount({ ownerId, ownerFirstName, ownerLastName, type, subtype, accountName, currencyType, currency }) {
+  async createAccount({ ownerId, ownerFirstName, ownerLastName, type, subtype, accountName, currencyType, currency, companyData, dailyLimit, monthlyLimit }) {
     let accountType
     if (currencyType === 'foreign') {
       accountType = 'FOREIGN_CURRENCY'
@@ -38,7 +38,14 @@ export const accountService = {
       accountType,
       accountName,
       currencyCode: currency,
+      ...(companyData  && { companyData }),
+      ...(dailyLimit   && { dailyLimit }),
+      ...(monthlyLimit && { monthlyLimit }),
     })
     return bankAccountFromApi({ ownerFirstName, ownerLastName, ...data })
+  },
+
+  async updateAccountLimits(id, { dailyLimit, monthlyLimit }) {
+    await apiClient.put(`/api/accounts/${id}/limits`, { dailyLimit, monthlyLimit })
   },
 }
