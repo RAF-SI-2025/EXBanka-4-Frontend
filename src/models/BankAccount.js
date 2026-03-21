@@ -27,6 +27,7 @@ export class BankAccount {
     monthlyLimit,
     dailySpending,
     monthlySpending,
+    company,
   }) {
     this.id                  = id
     this.accountNumber       = accountNumber
@@ -58,6 +59,8 @@ export class BankAccount {
     this.monthlyLimit        = monthlyLimit        ?? 1000000  // max transaction amount per month
     this.dailySpending       = dailySpending       ?? 0    // total spent today
     this.monthlySpending     = monthlySpending     ?? 0    // total spent this month
+    // Business accounts only: { name, pib, registrationNumber, address, activityCode }
+    this.company             = company             ?? null
   }
 
   get ownerFullName() {
@@ -112,5 +115,6 @@ export function bankAccountFromApi(data) {
     monthlyLimit:     data.monthlyLimit   ?? 1000000,
     dailySpending:    data.dailySpent     ?? 0,
     monthlySpending:  data.monthlySpent   ?? 0,
+    company:          data.company        ?? null,
   })
 }
