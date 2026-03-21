@@ -38,6 +38,8 @@ import ClientCardsPage from './pages/client/ClientCardsPage'
 import ClientCardRequestPage from './pages/client/ClientCardRequestPage'
 import ClientCardConfirmPage from './pages/client/ClientCardConfirmPage'
 import ClientLoansPage from './pages/client/ClientLoansPage'
+import ClientLoanDetailPage from './pages/client/ClientLoanDetailPage'
+import ClientLoanApplyPage from './pages/client/ClientLoanApplyPage'
 import ClientRecipientsPage from './pages/client/ClientRecipientsPage'
 import SetPasswordPage from './pages/employee/SetPasswordPage'
 import ResetPasswordPage from './pages/employee/ResetPasswordPage'
@@ -95,6 +97,8 @@ function App() {
           <Route path="/client/cards/request" element={<ClientCardRequestPage />} />
           <Route path="/client/cards/confirm" element={<ClientCardConfirmPage />} />
           <Route path="/client/loans" element={<ClientLoansPage />} />
+          <Route path="/client/loans/apply" element={<ClientLoanApplyPage />} />
+          <Route path="/client/loans/:id" element={<ClientLoanDetailPage />} />
           <Route path="/client/recipients" element={<ClientRecipientsPage />} />
 
           <Route path="*" element={<NotFoundPage />} />
