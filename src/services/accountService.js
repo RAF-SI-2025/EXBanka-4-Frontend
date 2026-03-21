@@ -18,7 +18,7 @@ export const accountService = {
   },
 
   async getAccountById(id) {
-    const { data } = await apiClient.get(`/api/accounts/${id}`)
+    const { data } = await apiClient.get(`/api/admin/accounts/${id}`)
     return bankAccountFromApi({ id, ...data })
   },
 

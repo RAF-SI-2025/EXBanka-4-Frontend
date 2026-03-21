@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useClientAuth } from '../../context/ClientAuthContext'
 import { useClientAccounts } from '../../context/ClientAccountsContext'
+import { clientAccountService } from '../../services/clientAccountService'
 import { fmt } from '../../utils/formatting'
 import Spinner from '../../components/Spinner'
 import { useApiError } from '../../context/ApiErrorContext'
@@ -35,7 +36,11 @@ export default function ClientAccountDetailPage() {
   const { accounts, loading, renameAccount } = useClientAccounts()
   const { addSuccess } = useApiError()
 
-  const account = accounts.find((a) => a.id === Number(id))
+  const listAccount = accounts.find((a) => a.id === Number(id))
+  const [detail, setDetail] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(true)
+
+  const account = detail ?? listAccount
 
   const [accountName, setAccountName] = useState(account?.accountName ?? '')
   const [editingName, setEditingName] = useState(false)
@@ -43,7 +48,15 @@ export default function ClientAccountDetailPage() {
 
   useWindowTitle(account ? `${accountName} | AnkaBanka` : 'Account | AnkaBanka')
 
-  if (loading) {
+  useEffect(() => {
+    setDetailLoading(true)
+    clientAccountService.getAccountById(Number(id))
+      .then(setDetail)
+      .catch(() => {})
+      .finally(() => setDetailLoading(false))
+  }, [id])
+
+  if ((loading || detailLoading) && !account) {
     return (
       <ClientPortalLayout>
         <Spinner />
@@ -186,6 +199,17 @@ export default function ClientAccountDetailPage() {
           <Row label="Currency" value={account.currency} />
           <Row label="Type"     value={`${account.type} · ${account.subtype}`} />
         </Card>
+
+        {/* Company info — business accounts only */}
+        {account.type === 'business' && account.company && (
+          <Card title="Company info">
+            <Row label="Company name"        value={account.company.name ?? '—'} />
+            <Row label="Registration number" value={account.company.registrationNumber ?? '—'} />
+            <Row label="PIB"                 value={account.company.pib ?? '—'} />
+            <Row label="Activity code"       value={account.company.activityCode ?? '—'} />
+            <Row label="Address"             value={account.company.address ?? '—'} />
+          </Card>
+        )}
 
         {/* Limits & spending */}
         <Card title="Limits & spending">

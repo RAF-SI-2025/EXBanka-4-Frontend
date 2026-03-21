@@ -4,7 +4,6 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import { useAccounts } from '../../context/AccountsContext'
 import { accountService } from '../../services/accountService'
 import { BankAccount } from '../../models/BankAccount'
-// TODO: replace with employee-scoped endpoint once backend adds GET /api/admin/accounts/:id
 import { fmt } from '../../utils/formatting'
 import Spinner from '../../components/Spinner'
 import { useApiError } from '../../context/ApiErrorContext'
@@ -53,6 +52,15 @@ export default function AccountDetailPage() {
   useEffect(() => {
     if (accounts.length === 0 && !listLoading) reload()
   }, [])
+
+  useEffect(() => {
+    accountService.getAccountById(Number(id))
+      .then((d) => {
+        setDetail(d)
+        setLimitForm({ dailyLimit: String(d.dailyLimit), monthlyLimit: String(d.monthlyLimit) })
+      })
+      .catch(() => {})
+  }, [id])
 
   useEffect(() => {
     if (account && !detail) {
