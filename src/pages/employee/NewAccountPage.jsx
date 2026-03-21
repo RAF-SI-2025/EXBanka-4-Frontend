@@ -65,11 +65,12 @@ export default function NewAccountPage() {
   const { clients, loading: clientsLoading, reload: reloadClients } = useClients()
   const { user } = useAuth()
 
-  const [form, setForm]       = useState({ ...EMPTY_FORM, ownerId: searchParams.get('clientId') ?? '' })
-  const [company, setCompany] = useState(EMPTY_COMPANY)
-  const [limits, setLimits]   = useState(EMPTY_LIMITS)
-  const [errors, setErrors]   = useState({})
-  const [success, setSuccess] = useState(null)
+  const [form, setForm]         = useState({ ...EMPTY_FORM, ownerId: searchParams.get('clientId') ?? '' })
+  const [company, setCompany]   = useState(EMPTY_COMPANY)
+  const [limits, setLimits]     = useState(EMPTY_LIMITS)
+  const [createCard, setCreateCard] = useState(false)
+  const [errors, setErrors]     = useState({})
+  const [success, setSuccess]   = useState(null)
 
   useEffect(() => {
     if (clients.length === 0) reloadClients()
@@ -169,6 +170,7 @@ export default function NewAccountPage() {
         createdByEmployeeId: user?.id ?? null,
         dailyLimit:          parseFloat(limits.dailyLimit),
         monthlyLimit:        parseFloat(limits.monthlyLimit),
+        createCard,
         ...(form.type === 'business' && {
           companyData: {
             name:               company.name.trim(),
@@ -204,7 +206,7 @@ export default function NewAccountPage() {
             </p>
             <div className="flex gap-3 justify-center">
               <button
-                onClick={() => { setForm(EMPTY_FORM); setCompany(EMPTY_COMPANY); setLimits(EMPTY_LIMITS); setSuccess(null) }}
+                onClick={() => { setForm(EMPTY_FORM); setCompany(EMPTY_COMPANY); setLimits(EMPTY_LIMITS); setCreateCard(false); setSuccess(null) }}
                 className="px-5 py-2 text-xs tracking-widest uppercase border border-violet-600 dark:border-violet-400 text-violet-600 dark:text-violet-400 hover:bg-violet-600 dark:hover:bg-violet-500 hover:text-white rounded-lg transition-colors"
               >
                 New Account
@@ -519,6 +521,23 @@ export default function NewAccountPage() {
                 </div>
               </Field>
             </div>
+          </div>
+
+          {/* Create card */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-8 shadow-sm">
+            <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-4">Card</p>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={createCard}
+                onChange={(e) => setCreateCard(e.target.checked)}
+                className="w-4 h-4 accent-violet-600"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300">Create a card for this account</span>
+            </label>
+            <p className="mt-2 ml-7 text-xs text-slate-400 dark:text-slate-500">
+              A card will be automatically generated — no email confirmation required.
+            </p>
           </div>
 
           {errors._submit && (

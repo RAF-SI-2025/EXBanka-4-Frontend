@@ -3,9 +3,11 @@ import { useParams, Link } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { useAccounts } from '../../context/AccountsContext'
 import { accountService } from '../../services/accountService'
+import { employeeCardService } from '../../services/cardService'
 import { BankAccount } from '../../models/BankAccount'
 import { fmt } from '../../utils/formatting'
 import Spinner from '../../components/Spinner'
+import CardBrand from '../../components/CardBrand'
 import { useApiError } from '../../context/ApiErrorContext'
 
 function Row({ label, value, mono = false }) {
@@ -267,10 +269,212 @@ export default function AccountDetailPage() {
         )}
 
         {/* Cards */}
-        <Card title="Cards">
-          <p className="text-sm text-slate-400 dark:text-slate-500">No cards linked to this account.</p>
-        </Card>
+        {account.accountNumber && (
+          <AccountCards accountNumber={account.accountNumber} />
+        )}
 
+      </div>
+    </div>
+  )
+}
+
+const CARD_STATUS_STYLES = {
+  ACTIVE:      'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400',
+  BLOCKED:     'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
+  DEACTIVATED: 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400',
+}
+
+function AccountCards({ accountNumber }) {
+  const { addSuccess } = useApiError()
+  const [cards, setCards]     = useState(null) // null = loading
+  const [error, setError]     = useState(false)
+
+  useEffect(() => {
+    employeeCardService.getCardsByAccount(accountNumber)
+      .then(setCards)
+      .catch(() => { setCards([]); setError(true) })
+  }, [accountNumber])
+
+  function updateCard(updated) {
+    setCards((prev) => prev.map((c) => c.cardNumber === updated.cardNumber ? updated : c))
+  }
+
+  return (
+    <Card title="Cards">
+      {cards === null ? (
+        <Spinner />
+      ) : error ? (
+        <p className="text-sm text-slate-400 dark:text-slate-500">Could not load cards.</p>
+      ) : cards.length === 0 ? (
+        <p className="text-sm text-slate-400 dark:text-slate-500">No cards linked to this account.</p>
+      ) : (
+        <div className="space-y-3 pt-1">
+          {cards.map((card) => (
+            <EmployeeCardRow
+              key={card.cardNumber}
+              card={card}
+              onUpdate={updateCard}
+              addSuccess={addSuccess}
+            />
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function EmployeeCardRow({ card, onUpdate, addSuccess }) {
+  const [busy, setBusy]                           = useState(false)
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false)
+  const [editingLimit, setEditingLimit]           = useState(false)
+  const [limitInput, setLimitInput]               = useState(String(card.cardLimit))
+  const [limitError, setLimitError]               = useState(null)
+  const [limitBusy, setLimitBusy]                 = useState(false)
+
+  async function doAction(action, label) {
+    setBusy(true)
+    try {
+      await action()
+      addSuccess(`Card ${card.cardNumber} ${label}.`)
+    } finally {
+      setBusy(false)
+      setConfirmDeactivate(false)
+    }
+  }
+
+  async function handleBlock() {
+    await doAction(async () => {
+      await employeeCardService.blockCard(card.cardNumber)
+      onUpdate({ ...card, status: 'BLOCKED' })
+    }, 'blocked')
+  }
+
+  async function handleUnblock() {
+    await doAction(async () => {
+      await employeeCardService.unblockCard(card.cardNumber)
+      onUpdate({ ...card, status: 'ACTIVE' })
+    }, 'unblocked')
+  }
+
+  async function handleDeactivate() {
+    await doAction(async () => {
+      await employeeCardService.deactivateCard(card.cardNumber)
+      onUpdate({ ...card, status: 'DEACTIVATED' })
+    }, 'deactivated')
+  }
+
+  async function handleSaveLimit() {
+    const value = parseFloat(limitInput)
+    if (!limitInput || isNaN(value) || value <= 0) {
+      setLimitError('Must be a positive number.')
+      return
+    }
+    setLimitBusy(true)
+    setLimitError(null)
+    try {
+      await employeeCardService.updateCardLimit(card.cardNumber, value)
+      onUpdate({ ...card, cardLimit: value })
+      setEditingLimit(false)
+      addSuccess(`Card limit updated to ${value}.`)
+    } finally {
+      setLimitBusy(false)
+    }
+  }
+
+  return (
+    <div className={`py-3 border-b border-slate-100 dark:border-slate-800 last:border-0 ${card.isDeactivated ? 'opacity-60' : ''}`}>
+      {/* Top row: brand + number + status + actions */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <CardBrand brand={card.cardName} size="sm" />
+          <div className="min-w-0">
+            <p className="font-mono text-sm text-slate-900 dark:text-white tracking-widest">{card.cardNumber}</p>
+            {card.expiryDate && (
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Expires {card.expiryDate}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <span className={`text-xs px-2.5 py-1 rounded-full font-light ${CARD_STATUS_STYLES[card.status] ?? CARD_STATUS_STYLES.DEACTIVATED}`}>
+            {card.status.charAt(0) + card.status.slice(1).toLowerCase()}
+          </span>
+
+          {!card.isDeactivated && !confirmDeactivate && (
+            <div className="flex items-center gap-2">
+              {card.isActive && (
+                <button onClick={handleBlock} disabled={busy}
+                  className="text-xs tracking-widest uppercase text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                  Block
+                </button>
+              )}
+              {card.isBlocked && (
+                <button onClick={handleUnblock} disabled={busy}
+                  className="text-xs tracking-widest uppercase text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+                  Unblock
+                </button>
+              )}
+              <button onClick={() => setConfirmDeactivate(true)} disabled={busy}
+                className="text-xs tracking-widest uppercase text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+                Deactivate
+              </button>
+            </div>
+          )}
+
+          {confirmDeactivate && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400">Permanently deactivate?</span>
+              <button onClick={handleDeactivate} disabled={busy}
+                className="text-xs tracking-widest uppercase text-red-500 dark:text-red-400 hover:text-red-700 transition-colors">
+                {busy ? 'Deactivating…' : 'Confirm'}
+              </button>
+              <button onClick={() => setConfirmDeactivate(false)}
+                className="text-xs tracking-widest uppercase text-slate-400 hover:text-slate-600 transition-colors">
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Limit row */}
+      <div className="mt-2 ml-[52px] flex items-center gap-3">
+        {editingLimit ? (
+          <>
+            <div className="relative">
+              <input
+                type="number"
+                value={limitInput}
+                onChange={(e) => { setLimitInput(e.target.value); setLimitError(null) }}
+                min="1"
+                step="1"
+                className={`input-field py-1 text-xs w-36 pr-10 ${limitError ? 'input-error' : ''}`}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">RSD</span>
+            </div>
+            {limitError && <p className="text-xs text-red-500">{limitError}</p>}
+            <button onClick={handleSaveLimit} disabled={limitBusy}
+              className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 hover:text-violet-800 transition-colors">
+              {limitBusy ? 'Saving…' : 'Save'}
+            </button>
+            <button onClick={() => { setEditingLimit(false); setLimitInput(String(card.cardLimit)); setLimitError(null) }}
+              className="text-xs tracking-widest uppercase text-slate-400 hover:text-slate-600 transition-colors">
+              Cancel
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="text-xs text-slate-400 dark:text-slate-500">
+              Limit: <span className="text-slate-600 dark:text-slate-300">{card.cardLimit.toLocaleString('sr-RS')} RSD</span>
+            </span>
+            {!card.isDeactivated && (
+              <button onClick={() => { setLimitInput(String(card.cardLimit)); setEditingLimit(true) }}
+                className="text-xs tracking-widest uppercase text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
+                Edit limit
+              </button>
+            )}
+          </>
+        )}
       </div>
     </div>
   )
