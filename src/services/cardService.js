@@ -10,6 +10,11 @@ export const cardService = {
     return data.map(cardFromApi)
   },
 
+  async getCardById(id) {
+    const { data } = await clientApiClient.get(`/api/cards/id/${id}`)
+    return cardFromApi(data)
+  },
+
   async requestCard({ accountNumber, cardName, forSelf, authorizedPerson }) {
     const { data } = await clientApiClient.post('/api/cards/request', {
       accountNumber,
@@ -38,6 +43,11 @@ export const employeeCardService = {
   async getCardsByAccount(accountNumber) {
     const { data } = await apiClient.get(`/api/cards/by-account/${accountNumber}`)
     return data.map(cardFromApi)
+  },
+
+  async getCardById(id) {
+    const { data } = await apiClient.get(`/api/cards/id/${id}`)
+    return cardFromApi(data)
   },
 
   async blockCard(cardId) {
