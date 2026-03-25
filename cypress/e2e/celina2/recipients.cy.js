@@ -5,11 +5,49 @@
 
 const CLIENT_EMAIL    = 'ddimitrijevi822rn@raf.rs'
 const CLIENT_PASSWORD = 'taraDunjic123'
+const API_BASE        = 'http://localhost:8083'
 
 // A valid account number that passes isValidAccountNumber (format: 265-0000000000000-00)
 const VALID_ACCOUNT = '265-1234567890123-45'
 
+// Prefixes used by this test suite — used to identify and clean up leftover rows
+const TEST_PREFIXES = ['Test Primalac', 'Primalac Za Izmenu', 'Izmenjen Primalac', 'Primalac Za Brisanje']
+
+/** Dismiss all visible toast notifications so they don't cover buttons. */
+function dismissToasts() {
+  cy.get('button[aria-label="Dismiss"]').each(($btn) => {
+    cy.wrap($btn).click()
+  })
+}
+
 describe('Upravljanje primaocima plaćanja — klijent', () => {
+
+  // ── Cleanup: remove leftover test recipients from previous runs ──────────
+  before(() => {
+    cy.request('POST', `${API_BASE}/client/login`, {
+      email:    CLIENT_EMAIL,
+      password: CLIENT_PASSWORD,
+      source:   'mobile',
+    }).then(({ body }) => {
+      const token = body.access_token
+      cy.request({
+        method:  'GET',
+        url:     `${API_BASE}/api/recipients`,
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(({ body: recipients }) => {
+        recipients
+          .filter(r => TEST_PREFIXES.some(p => r.name.startsWith(p)))
+          .forEach(r => {
+            cy.request({
+              method:  'DELETE',
+              url:     `${API_BASE}/api/recipients/${r.id}`,
+              headers: { Authorization: `Bearer ${token}` },
+              failOnStatusCode: false,
+            })
+          })
+      })
+    })
+  })
 
   beforeEach(() => {
     cy.visit('/client/login')
@@ -45,14 +83,15 @@ describe('Upravljanje primaocima plaćanja — klijent', () => {
     cy.get('button[type="submit"]').click()
 
     // Then: novi primalac se dodaje u listu
-    cy.contains(recipientName).should('be.visible')
-    cy.contains(VALID_ACCOUNT).should('be.visible')
+    cy.contains(recipientName).scrollIntoView().should('be.visible')
+    cy.contains(VALID_ACCOUNT).scrollIntoView().should('be.visible')
 
     // And: success toast potvrđuje dodavanje
     cy.contains(`${recipientName} added to recipients.`).should('be.visible')
 
     // And: primalac je dostupan za buduća plaćanja (Pay dugme postoji u redu)
-    cy.contains('tr', recipientName).within(() => {
+    dismissToasts()
+    cy.contains('tr', recipientName).scrollIntoView().within(() => {
       cy.contains('Pay').should('be.visible')
     })
   })
@@ -72,11 +111,14 @@ describe('Upravljanje primaocima plaćanja — klijent', () => {
     cy.get('button[type="submit"]').click()
     cy.contains(`${originalName} added to recipients.`).should('be.visible')
 
+    // Dismiss toast before clicking Edit so it doesn't cover the button
+    dismissToasts()
+
     // Given: postoji sačuvan primalac u listi
-    cy.contains('tr', originalName).should('be.visible')
+    cy.contains('tr', originalName).scrollIntoView().should('be.visible')
 
     // When: klikne na dugme "Izmeni" pored primaoca
-    cy.contains('tr', originalName).within(() => {
+    cy.contains('tr', originalName).scrollIntoView().within(() => {
       cy.contains('Edit').click()
     })
 
@@ -95,9 +137,11 @@ describe('Upravljanje primaocima plaćanja — klijent', () => {
     cy.contains(`${updatedName} updated successfully.`).should('be.visible')
 
     // And: ažurirani podaci se prikazuju u listi
-    cy.contains(updatedName).should('be.visible')
-    cy.contains(updatedAccount).should('be.visible')
-    cy.contains(originalName).should('not.exist')
+    cy.get('table').should('contain', updatedName)
+    cy.get('table').should('contain', updatedAccount)
+    // Scope to table — the "added to recipients" toast is still visible
+    // and contains originalName, so we can't assert on the whole document
+    cy.get('table').should('not.contain', originalName)
   })
 
   // ── Scenario 23 ─────────────────────────────────────────────────────────────
@@ -112,11 +156,14 @@ describe('Upravljanje primaocima plaćanja — klijent', () => {
     cy.get('button[type="submit"]').click()
     cy.contains(`${recipientName} added to recipients.`).should('be.visible')
 
+    // Dismiss toast before clicking Delete so it doesn't cover the button
+    dismissToasts()
+
     // Given: u listi postoji sačuvan primalac
-    cy.contains('tr', recipientName).should('be.visible')
+    cy.contains('tr', recipientName).scrollIntoView().should('be.visible')
 
     // When: klikne na dugme "Obriši" pored primaoca
-    cy.contains('tr', recipientName).within(() => {
+    cy.contains('tr', recipientName).scrollIntoView().within(() => {
       cy.contains('Delete').click()
     })
 
