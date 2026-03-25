@@ -77,6 +77,12 @@ export class BankAccount {
   }
 }
 
+// Formats a raw accountType string for display (e.g. "foreign_currency" → "Foreign Currency")
+export function formatAccountType(type) {
+  if (!type) return '—'
+  return type.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+}
+
 // ─── Subtype labels ───────────────────────────────────────────────────────────
 
 export const PERSONAL_SUBTYPES = [
@@ -107,7 +113,7 @@ export function bankAccountFromApi(data) {
     createdByEmployeeId: data.employeeId  ?? null,
     currency:         data.currency ?? data.currencyCode ?? 'RSD',
     type:             data.accountType?.toUpperCase() === 'BUSINESS' ? 'business' : 'personal',
-    subtype:          data.accountType ? data.accountType.toLowerCase() : null,
+    subtype:          data.accountSubtype ?? (data.accountType ? data.accountType.toLowerCase() : null),
     status:           data.status ? data.status.toLowerCase() : 'active',
     balance:          data.balance        ?? 0,
     availableBalance: data.availableBalance ?? 0,

@@ -4,7 +4,7 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import { useAccounts } from '../../context/AccountsContext'
 import { accountService } from '../../services/accountService'
 import { employeeCardService } from '../../services/cardService'
-import { BankAccount } from '../../models/BankAccount'
+import { BankAccount, formatAccountType } from '../../models/BankAccount'
 import { fmt } from '../../utils/formatting'
 import Spinner from '../../components/Spinner'
 import CardBrand from '../../components/CardBrand'
@@ -177,7 +177,7 @@ export default function AccountDetailPage() {
               {account.type === 'personal' ? 'Personal' : 'Business'}
             </span>
           } />
-          <Row label="Subtype"  value={account.subtype ?? '—'} />
+          <Row label="Subtype"  value={formatAccountType(account.subtype)} />
           <Row label="Currency" value={account.currency} />
           <Row label="Currency Type" value={
             <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium tracking-wide rounded-full ${
@@ -271,7 +271,7 @@ export default function AccountDetailPage() {
 
         {/* Cards */}
         {account.accountNumber && (
-          <AccountCards accountNumber={account.accountNumber} />
+          <AccountCards accountNumber={account.accountNumber} currency={account.currency} />
         )}
 
       </div>
@@ -285,7 +285,7 @@ const CARD_STATUS_STYLES = {
   DEACTIVATED: 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400',
 }
 
-function AccountCards({ accountNumber }) {
+function AccountCards({ accountNumber, currency = 'RSD' }) {
   const { addSuccess } = useApiError()
   const [cards, setCards]           = useState(null) // null = loading
   const [error, setError]           = useState(false)
@@ -316,6 +316,7 @@ function AccountCards({ accountNumber }) {
               <EmployeeCardRow
                 key={card.cardNumber}
                 card={card}
+                currency={currency}
                 onUpdate={updateCard}
                 addSuccess={addSuccess}
                 onClick={() => setSelectedCard(card)}
@@ -333,6 +334,7 @@ function AccountCards({ accountNumber }) {
           actions={
             <EmployeeCardActions
               card={selectedCard}
+              currency={currency}
               onUpdate={(updated) => { updateCard(updated); setSelectedCard(null) }}
               addSuccess={addSuccess}
             />
@@ -343,7 +345,7 @@ function AccountCards({ accountNumber }) {
   )
 }
 
-function EmployeeCardRow({ card, onUpdate, addSuccess, onClick }) {
+function EmployeeCardRow({ card, currency = 'RSD', onUpdate, addSuccess, onClick }) {
   const [busy, setBusy]                           = useState(false)
   const [confirmDeactivate, setConfirmDeactivate] = useState(false)
   const [editingLimit, setEditingLimit]           = useState(false)
@@ -470,7 +472,7 @@ function EmployeeCardRow({ card, onUpdate, addSuccess, onClick }) {
                 step="1"
                 className={`input-field py-1 text-xs w-36 pr-10 ${limitError ? 'input-error' : ''}`}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">RSD</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">{currency}</span>
             </div>
             {limitError && <p className="text-xs text-red-500">{limitError}</p>}
             <button onClick={handleSaveLimit} disabled={limitBusy}
@@ -485,7 +487,7 @@ function EmployeeCardRow({ card, onUpdate, addSuccess, onClick }) {
         ) : (
           <>
             <span className="text-xs text-slate-400 dark:text-slate-500">
-              Limit: <span className="text-slate-600 dark:text-slate-300">{card.cardLimit.toLocaleString('sr-RS')} RSD</span>
+              Limit: <span className="text-slate-600 dark:text-slate-300">{card.cardLimit.toLocaleString('sr-RS')} {currency}</span>
             </span>
             {!card.isDeactivated && (
               <button onClick={() => { setLimitInput(String(card.cardLimit)); setEditingLimit(true) }}
@@ -500,7 +502,7 @@ function EmployeeCardRow({ card, onUpdate, addSuccess, onClick }) {
   )
 }
 
-function EmployeeCardActions({ card, onUpdate, addSuccess }) {
+function EmployeeCardActions({ card, currency = 'RSD', onUpdate, addSuccess }) {
   const [busy, setBusy]                           = useState(false)
   const [confirmDeactivate, setConfirmDeactivate] = useState(false)
   const [editingLimit, setEditingLimit]           = useState(false)
@@ -608,7 +610,7 @@ function EmployeeCardActions({ card, onUpdate, addSuccess }) {
         ) : (
           <>
             <span className="text-xs text-slate-400 dark:text-slate-500">
-              Limit: <span className="text-slate-600 dark:text-slate-300">{card.cardLimit.toLocaleString('sr-RS')} RSD</span>
+              Limit: <span className="text-slate-600 dark:text-slate-300">{card.cardLimit.toLocaleString('sr-RS')} {currency}</span>
             </span>
             <button onClick={() => { setLimitInput(String(card.cardLimit)); setEditingLimit(true) }}
               className="text-xs tracking-widest uppercase text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">

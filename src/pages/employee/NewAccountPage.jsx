@@ -5,6 +5,7 @@ import { useAccounts } from '../../context/AccountsContext'
 import { useClients } from '../../context/ClientsContext'
 import { useAuth } from '../../context/AuthContext'
 import { PERSONAL_SUBTYPES, BUSINESS_SUBTYPES } from '../../models/BankAccount'
+import { apiClient } from '../../services/apiClient'
 
 const FOREIGN_CURRENCIES = ['EUR', 'USD', 'GBP', 'CHF', 'JPY', 'CAD', 'AUD']
 
@@ -41,6 +42,28 @@ function defaultName(type, subtype) {
   return found ? `${found.label} Account` : ''
 }
 
+function defaultCardLimitRsd(type, subtype) {
+  if (type === 'business') {
+    return subtype === 'foundation' ? 100000 : 500000
+  }
+  switch (subtype) {
+    case 'standard':   return 250000
+    case 'savings':    return 50000
+    case 'pensioner':  return 50000
+    case 'youth':      return 25000
+    case 'student':    return 25000
+    case 'unemployed': return 10000
+    default:           return 250000
+  }
+}
+
+function toAccountCurrency(rsdAmount, currency, rates) {
+  if (!currency || currency === 'RSD') return String(rsdAmount)
+  const rate = rates.find(r => r.currencyCode === currency)?.sellingRate
+  if (!rate) return String(rsdAmount)
+  return String(Math.round(rsdAmount / rate / 50) * 50)
+}
+
 function defaultLimits(type, subtype) {
   if (type === 'business') {
     if (subtype === 'foundation') return { dailyLimit: '100000', monthlyLimit: '1000000' }
@@ -69,11 +92,14 @@ export default function NewAccountPage() {
   const [company, setCompany]   = useState(EMPTY_COMPANY)
   const [limits, setLimits]     = useState(EMPTY_LIMITS)
   const [createCard, setCreateCard] = useState(false)
+  const [cardLimit, setCardLimit]   = useState('')
+  const [exchangeRates, setExchangeRates] = useState([])
   const [errors, setErrors]     = useState({})
   const [success, setSuccess]   = useState(null)
 
   useEffect(() => {
     if (clients.length === 0) reloadClients()
+    apiClient.get('/exchange/rates').then(({ data }) => setExchangeRates(data)).catch(() => {})
   }, [])
 
   function handleChange(e) {
@@ -100,16 +126,43 @@ export default function NewAccountPage() {
         subtype:     value,
         accountName: defaultName(prev.type, value),
       }))
-      setLimits(defaultLimits(form.type, value))
+      const rsdLimits = defaultLimits(form.type, value)
+      setLimits({
+        dailyLimit:   toAccountCurrency(parseFloat(rsdLimits.dailyLimit),   form.currency, exchangeRates),
+        monthlyLimit: toAccountCurrency(parseFloat(rsdLimits.monthlyLimit), form.currency, exchangeRates),
+      })
+      setCardLimit(toAccountCurrency(defaultCardLimitRsd(form.type, value), form.currency, exchangeRates))
       return
     }
 
     if (name === 'currencyType') {
+      const newCurrency = value === 'current' ? 'RSD' : ''
       setForm((prev) => ({
         ...prev,
         currencyType: value,
-        currency:     value === 'current' ? 'RSD' : '',
+        currency:     newCurrency,
       }))
+      if (form.subtype) {
+        const rsdLimits = defaultLimits(form.type, form.subtype)
+        setLimits({
+          dailyLimit:   toAccountCurrency(parseFloat(rsdLimits.dailyLimit),   newCurrency, exchangeRates),
+          monthlyLimit: toAccountCurrency(parseFloat(rsdLimits.monthlyLimit), newCurrency, exchangeRates),
+        })
+      }
+      setCardLimit(toAccountCurrency(defaultCardLimitRsd(form.type, form.subtype), newCurrency, exchangeRates))
+      return
+    }
+
+    if (name === 'currency') {
+      setForm((prev) => ({ ...prev, currency: value }))
+      if (form.subtype) {
+        const rsdLimits = defaultLimits(form.type, form.subtype)
+        setLimits({
+          dailyLimit:   toAccountCurrency(parseFloat(rsdLimits.dailyLimit),   value, exchangeRates),
+          monthlyLimit: toAccountCurrency(parseFloat(rsdLimits.monthlyLimit), value, exchangeRates),
+        })
+      }
+      setCardLimit(toAccountCurrency(defaultCardLimitRsd(form.type, form.subtype), value, exchangeRates))
       return
     }
 
@@ -147,6 +200,11 @@ export default function NewAccountPage() {
     if (!limits.monthlyLimit || isNaN(monthly) || monthly <= 0) errs.monthlyLimit = true
     if (!errs.dailyLimit && !errs.monthlyLimit && daily > monthly) errs.dailyLimit = true
 
+    if (createCard) {
+      const cl = parseFloat(cardLimit)
+      if (!cardLimit || isNaN(cl) || cl <= 0) errs.cardLimit = true
+    }
+
     return errs
   }
 
@@ -171,6 +229,7 @@ export default function NewAccountPage() {
         dailyLimit:          parseFloat(limits.dailyLimit),
         monthlyLimit:        parseFloat(limits.monthlyLimit),
         createCard,
+        ...(createCard && { cardLimit: parseFloat(cardLimit) }),
         ...(form.type === 'business' && {
           companyData: {
             name:               company.name.trim(),
@@ -498,7 +557,7 @@ export default function NewAccountPage() {
                     className={`input-field pr-14${errors.dailyLimit ? ' input-error' : ''}`}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 pointer-events-none">
-                    RSD
+                    {form.currency || 'RSD'}
                   </span>
                 </div>
               </Field>
@@ -516,7 +575,7 @@ export default function NewAccountPage() {
                     className={`input-field pr-14${errors.monthlyLimit ? ' input-error' : ''}`}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 pointer-events-none">
-                    RSD
+                    {form.currency || 'RSD'}
                   </span>
                 </div>
               </Field>
@@ -538,6 +597,19 @@ export default function NewAccountPage() {
             <p className="mt-2 ml-7 text-xs text-slate-400 dark:text-slate-500">
               A card will be automatically generated — no email confirmation required.
             </p>
+            {createCard && (
+              <div className="mt-4 ml-7">
+                <Field label={`Card Limit (${form.currency || 'RSD'})`} error={errors.cardLimit}>
+                  <input
+                    type="number"
+                    value={cardLimit}
+                    onChange={(e) => { setErrors((p) => ({ ...p, cardLimit: false })); setCardLimit(e.target.value) }}
+                    className={`input-field ${errors.cardLimit ? 'input-error' : ''}`}
+                    min="1"
+                  />
+                </Field>
+              </div>
+            )}
           </div>
 
           {errors._submit && (
