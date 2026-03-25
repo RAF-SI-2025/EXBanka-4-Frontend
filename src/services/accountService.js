@@ -23,19 +23,9 @@ export const accountService = {
   },
 
   async createAccount({ ownerId, ownerFirstName, ownerLastName, type, subtype, accountName, currencyType, currency, companyData, dailyLimit, monthlyLimit, createCard, cardLimit }) {
-    let accountType
-    if (currencyType === 'foreign') {
-      accountType = 'FOREIGN_CURRENCY'
-    } else if (type === 'business') {
-      accountType = 'BUSINESS'
-    } else if (subtype === 'savings') {
-      accountType = 'SAVINGS'
-    } else {
-      accountType = 'CURRENT'
-    }
     const { data } = await apiClient.post('/api/accounts/create', {
       clientId:       ownerId,
-      accountType,
+      accountType:    type,
       accountSubtype: subtype,
       accountName,
       currencyCode:   currency,
