@@ -37,7 +37,7 @@ describe('Prenos sredstava — klijent', () => {
           headers: { Authorization: `Bearer ${adminToken}` },
           body: {
             clientId:       client.id,
-            accountType:    'CURRENT',
+            accountType:    'personal',
             currencyCode:   'RSD',
             initialBalance: 1000,
             accountName:    'Cypress Transfer Test',
@@ -51,7 +51,7 @@ describe('Prenos sredstava — klijent', () => {
           headers: { Authorization: `Bearer ${adminToken}` },
           body: {
             clientId:       client.id,
-            accountType:    'FOREIGN_CURRENCY',
+            accountType:    'personal',
             currencyCode:   'EUR',
             initialBalance: 100,
             accountName:    'Cypress EUR Test',

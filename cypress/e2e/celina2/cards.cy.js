@@ -68,7 +68,7 @@ describe('Kartice — scenarios 27–32', () => {
           headers: { Authorization: `Bearer ${adminToken}` },
           body: {
             clientId:       client.id,
-            accountType:    'CURRENT',
+            accountType:    'personal',
             currencyCode:   'RSD',
             initialBalance: 500,
             accountName:    'Cypress Card Seed',

@@ -36,7 +36,7 @@ describe('Menjačnica — scenarios 24–26', () => {
           headers: { Authorization: `Bearer ${adminToken}` },
           body: {
             clientId:       client.id,
-            accountType:    'CURRENT',
+            accountType:    'personal',
             currencyCode:   'RSD',
             initialBalance: 2000,
             accountName:    'Cypress Exchange RSD',
@@ -50,7 +50,7 @@ describe('Menjačnica — scenarios 24–26', () => {
           headers: { Authorization: `Bearer ${adminToken}` },
           body: {
             clientId:       client.id,
-            accountType:    'FOREIGN_CURRENCY',
+            accountType:    'personal',
             currencyCode:   'EUR',
             initialBalance: 0,
             accountName:    'Cypress Exchange EUR',
