@@ -9,7 +9,7 @@
 import axios from 'axios'
 import { clientTokenService } from './clientTokenService'
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8081'
+const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8083'
 
 // Bare client used only for the refresh call — no interceptors to avoid loops.
 export const clientRefreshAxios = axios.create({ baseURL: BASE_URL })
