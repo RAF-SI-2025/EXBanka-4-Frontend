@@ -221,7 +221,7 @@ describe('Prenos sredstava — klijent', () => {
               cy.get('button[type="submit"]').click()
 
               // Then: sistem prikazuje poruku o nedovoljnim sredstvima
-              cy.contains('Insufficient funds').should('be.visible')
+              cy.contains('Insufficient funds').scrollIntoView().should('be.visible')
 
               // And: transfer se ne izvršava
               cy.contains('Transfer initiated').should('not.exist')

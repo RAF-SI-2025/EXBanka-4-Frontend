@@ -84,10 +84,14 @@ describe('Plaćanja — scenarios 9–16', () => {
   // ── Scenario 9 ───────────────────────────────────────────────────────────
 
   it('Scenario 9: uspešno slanje naloga za plaćanje — prikazuje se ekran potvrde', () => {
-    cy.intercept('POST', '**/api/payments/create', {
+    cy.intercept('POST', '**/api/mobile/approvals', {
       statusCode: 200,
-      body: { id: 901, status: 'processing' },
-    }).as('createPayment')
+      body: { id: 901, status: 'pending' },
+    }).as('createApproval')
+    cy.intercept('GET', '**/api/approvals/901/poll', {
+      statusCode: 200,
+      body: { status: 'APPROVED' },
+    }).as('pollApproval')
 
     getClientAccounts((accounts) => {
       const funded = accounts.find(a => a.availableBalance > 0)
@@ -111,9 +115,9 @@ describe('Plaćanja — scenarios 9–16', () => {
       cy.contains('Payment summary').should('be.visible')
       cy.contains('Test Recipient').should('be.visible')
 
-      // Confirm payment (simulated mobile app button)
-      cy.contains('button', 'Confirm').click()
-      cy.wait('@createPayment')
+      // Approval is sent automatically on page load — just wait for the intercepts
+      cy.wait('@createApproval')
+      cy.wait('@pollApproval')
 
       // Then: success screen
       cy.contains('Payment Confirmed', { timeout: 10000 }).should('be.visible')
@@ -182,10 +186,14 @@ describe('Plaćanja — scenarios 9–16', () => {
   // ── Scenario 12 ──────────────────────────────────────────────────────────
 
   it('Scenario 12: plaćanje u stranoj valuti — nalog se uspešno kreira', () => {
-    cy.intercept('POST', '**/api/payments/create', {
+    cy.intercept('POST', '**/api/mobile/approvals', {
       statusCode: 200,
-      body: { id: 902, status: 'processing' },
-    }).as('createPayment')
+      body: { id: 902, status: 'pending' },
+    }).as('createApproval')
+    cy.intercept('GET', '**/api/approvals/902/poll', {
+      statusCode: 200,
+      body: { status: 'APPROVED' },
+    }).as('pollApproval')
 
     getClientAccounts((accounts) => {
       // Find a non-RSD funded account (e.g. EUR)
@@ -209,8 +217,8 @@ describe('Plaćanja — scenarios 9–16', () => {
       cy.url().should('include', '/client/payments/verify')
       cy.contains('h1', 'Verify Payment').should('be.visible')
 
-      cy.contains('button', 'Confirm').click()
-      cy.wait('@createPayment')
+      cy.wait('@createApproval')
+      cy.wait('@pollApproval')
 
       cy.contains('Payment Confirmed', { timeout: 10000 }).should('be.visible')
     })
@@ -219,10 +227,14 @@ describe('Plaćanja — scenarios 9–16', () => {
   // ── Scenario 13 ──────────────────────────────────────────────────────────
 
   it('Scenario 13: provera plaćanja — korisnik pregleda detalje pre potvrde', () => {
-    cy.intercept('POST', '**/api/payments/create', {
+    cy.intercept('POST', '**/api/mobile/approvals', {
       statusCode: 200,
-      body: { id: 903, status: 'processing' },
-    }).as('createPayment')
+      body: { id: 903, status: 'pending' },
+    }).as('createApproval')
+    cy.intercept('GET', '**/api/approvals/903/poll', {
+      statusCode: 200,
+      body: { status: 'APPROVED' },
+    }).as('pollApproval')
 
     getClientAccounts((accounts) => {
       const funded = accounts.find(a => a.availableBalance > 0)
@@ -254,9 +266,9 @@ describe('Plaćanja — scenarios 9–16', () => {
       // "Payment Confirmed" must NOT appear yet — not submitted
       cy.contains('Payment Confirmed').should('not.exist')
 
-      // Then: confirm via simulated mobile app button
-      cy.contains('button', 'Confirm').click()
-      cy.wait('@createPayment')
+      // Approval is sent automatically on page load — just wait for the intercepts
+      cy.wait('@createApproval')
+      cy.wait('@pollApproval')
 
       cy.contains('Payment Confirmed', { timeout: 10000 }).should('be.visible')
     })
