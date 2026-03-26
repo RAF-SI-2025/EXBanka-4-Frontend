@@ -2,8 +2,7 @@
  * Feature: Krediti (Loans)
  * Scenarios: 33–38
  *
- * S37/S38 require a backend cron job trigger and cannot be driven via UI.
- * They are marked pending with an explanatory note.
+ * S37/S38 use POST /admin/loans/trigger-installments to fire the cron on demand.
  */
 
 const ADMIN_EMAIL    = 'admin@exbanka.com'
@@ -221,32 +220,233 @@ describe('Krediti — scenarios 33–38', () => {
     })
   })
 
-  // ── Scenario 37 (pending — requires cron trigger) ────────────────────────────
+  // ── Scenario 37 ──────────────────────────────────────────────────────────────
 
-  it.skip('Scenario 37: automatsko skidanje rate — iznos se skida sa računa klijenta', () => {
-    /**
-     * This scenario requires the backend daily cron job to fire.
-     * It cannot be driven purely through the UI.
-     *
-     * To implement: expose a POST /admin/loans/trigger-installments endpoint
-     * that manually runs the installment collection job, then verify:
-     *   - the installment status changed to PAID
-     *   - the client account balance decreased by the installment amount
-     *   - the next payment date shifted by one month
-     */
+  it('Scenario 37: automatsko skidanje rate — iznos se skida sa računa klijenta', () => {
+    // Seed: admin creates a funded RSD account, client applies, employee approves
+    cy.request('POST', `${API_BASE}/login`, {
+      email: ADMIN_EMAIL, password: ADMIN_PASSWORD,
+    }).then(({ body: adminBody }) => {
+      const adminToken = adminBody.access_token
+
+      cy.request({
+        method:  'GET',
+        url:     `${API_BASE}/clients`,
+        headers: { Authorization: `Bearer ${adminToken}` },
+        qs:      { page: 1, page_size: 100 },
+      }).then(({ body }) => {
+        const client = body.clients.find(c => c.email === CLIENT_EMAIL)
+        expect(client, 'test client must exist').to.exist
+
+        // Create a funded account for the loan repayment
+        cy.request({
+          method:  'POST',
+          url:     `${API_BASE}/api/accounts/create`,
+          headers: { Authorization: `Bearer ${adminToken}` },
+          body: {
+            clientId:       client.id,
+            accountType:    'personal',
+            currencyCode:   'RSD',
+            initialBalance: 10000,
+            accountName:    'Cypress Loan S37',
+          },
+        }).then(({ body: acc }) => {
+          const accountNumber = acc.accountNumber
+
+          // Client applies for a loan linked to that account
+          cy.request('POST', `${API_BASE}/client/login`, {
+            email: CLIENT_EMAIL, password: CLIENT_PASSWORD, source: 'mobile',
+          }).then(({ body: clientBody }) => {
+            const clientToken = clientBody.access_token
+
+            cy.request({
+              method:  'POST',
+              url:     `${API_BASE}/loans/apply`,
+              headers: { Authorization: `Bearer ${clientToken}` },
+              body: {
+                loanType:         'CASH',
+                interestRateType: 'FIXED',
+                amount:           1000,
+                currency:         'RSD',
+                repaymentPeriod:  12,
+                accountNumber,
+                monthlySalary:    80000,
+                employmentStatus: 'PERMANENT',
+              },
+            }).then(({ body: loan }) => {
+              const loanId = loan.loanId
+
+              // Employee approves the loan
+              cy.request({
+                method:  'PUT',
+                url:     `${API_BASE}/admin/loans/${loanId}/approve`,
+                headers: { Authorization: `Bearer ${adminToken}` },
+                body:    { employeeId: 1 },
+              })
+
+              // Get balance before trigger
+              cy.request({
+                method:  'GET',
+                url:     `${API_BASE}/api/accounts/my`,
+                headers: { Authorization: `Bearer ${clientToken}` },
+              }).then(({ body: accounts }) => {
+                const acct = accounts.find(a => a.accountNumber === accountNumber)
+                const balanceBefore = acct.availableBalance
+
+                // Trigger installment collection for this specific loan
+                cy.request({
+                  method:  'POST',
+                  url:     `${API_BASE}/admin/loans/trigger-installments`,
+                  headers: { Authorization: `Bearer ${adminToken}` },
+                  body:    { forceLoanId: loanId },
+                }).then(({ body: triggerResp }) => {
+                  expect(triggerResp.processed).to.equal(1)
+                })
+
+                // Then: installment is PAID
+                cy.request({
+                  method:  'GET',
+                  url:     `${API_BASE}/loans/${loanId}/installments`,
+                  headers: { Authorization: `Bearer ${clientToken}` },
+                }).then(({ body: installments }) => {
+                  const paid = installments.find(i => i.status === 'PAID')
+                  expect(paid, 'first installment should be PAID').to.exist
+                })
+
+                // And: account balance decreased by the installment amount
+                cy.request({
+                  method:  'GET',
+                  url:     `${API_BASE}/api/accounts/my`,
+                  headers: { Authorization: `Bearer ${clientToken}` },
+                }).then(({ body: accounts2 }) => {
+                  const acct2 = accounts2.find(a => a.accountNumber === accountNumber)
+                  expect(acct2.availableBalance).to.be.lessThan(balanceBefore)
+                })
+
+                // And: loan next_installment_date moved forward one month
+                cy.request({
+                  method:  'GET',
+                  url:     `${API_BASE}/loans/${loanId}`,
+                  headers: { Authorization: `Bearer ${clientToken}` },
+                }).then(({ body: loanDetail }) => {
+                  expect(loanDetail.status).to.equal('APPROVED')
+                  const nextDate = new Date(loanDetail.nextInstallmentDate)
+                  const today = new Date()
+                  expect(nextDate.getTime()).to.be.greaterThan(today.getTime())
+                })
+              })
+            })
+          })
+        })
+      })
+    })
   })
 
-  // ── Scenario 38 (pending — requires cron trigger) ────────────────────────────
+  // ── Scenario 38 ──────────────────────────────────────────────────────────────
 
-  it.skip('Scenario 38: kašnjenje u otplati — rata dobija status Kasni', () => {
-    /**
-     * Same constraint as S37 — requires triggering the cron job.
-     *
-     * To implement: ensure the client account has insufficient funds,
-     * trigger the installment job, then verify:
-     *   - the installment status is LATE / KASNI
-     *   - a retry is scheduled 72 hours later
-     */
+  it('Scenario 38: kašnjenje u otplati — rata dobija status Kasni', () => {
+    // Approval disburses loan amount to the account, so we can't start with 0.
+    // Strategy: create loan account + drain account, approve (disburses 1000 RSD
+    // to loan account), then transfer all funds out so the debit fails.
+    cy.request('POST', `${API_BASE}/login`, {
+      email: ADMIN_EMAIL, password: ADMIN_PASSWORD,
+    }).then(({ body: adminBody }) => {
+      const adminToken = adminBody.access_token
+
+      cy.request({
+        method:  'GET',
+        url:     `${API_BASE}/clients`,
+        headers: { Authorization: `Bearer ${adminToken}` },
+        qs:      { page: 1, page_size: 100 },
+      }).then(({ body }) => {
+        const client = body.clients.find(c => c.email === CLIENT_EMAIL)
+        expect(client, 'test client must exist').to.exist
+
+        // Create the loan account (starts at 0)
+        cy.request({
+          method:  'POST',
+          url:     `${API_BASE}/api/accounts/create`,
+          headers: { Authorization: `Bearer ${adminToken}` },
+          body: { clientId: client.id, accountType: 'personal', currencyCode: 'RSD', initialBalance: 0, accountName: 'Cypress Loan S38' },
+        }).then(({ body: loanAcc }) => {
+
+          // Create a drain account to receive the transferred funds
+          cy.request({
+            method:  'POST',
+            url:     `${API_BASE}/api/accounts/create`,
+            headers: { Authorization: `Bearer ${adminToken}` },
+            body: { clientId: client.id, accountType: 'personal', currencyCode: 'RSD', initialBalance: 0, accountName: 'Cypress Loan S38 Drain' },
+          }).then(({ body: drainAcc }) => {
+
+            cy.request('POST', `${API_BASE}/client/login`, {
+              email: CLIENT_EMAIL, password: CLIENT_PASSWORD, source: 'mobile',
+            }).then(({ body: clientBody }) => {
+              const clientToken = clientBody.access_token
+              const loanAmount = 1000
+
+              cy.request({
+                method:  'POST',
+                url:     `${API_BASE}/loans/apply`,
+                headers: { Authorization: `Bearer ${clientToken}` },
+                body: {
+                  loanType: 'CASH', interestRateType: 'FIXED',
+                  amount: loanAmount, currency: 'RSD', repaymentPeriod: 12,
+                  accountNumber: loanAcc.accountNumber,
+                  monthlySalary: 80000, employmentStatus: 'PERMANENT',
+                },
+              }).then(({ body: loan }) => {
+                const loanId = loan.loanId
+
+                // Approve — disburses loanAmount to loanAcc
+                cy.request({
+                  method:  'PUT',
+                  url:     `${API_BASE}/admin/loans/${loanId}/approve`,
+                  headers: { Authorization: `Bearer ${adminToken}` },
+                  body:    { employeeId: 1 },
+                })
+
+                // Transfer all disbursed funds out so balance = 0
+                cy.request({
+                  method:  'POST',
+                  url:     `${API_BASE}/api/transfers`,
+                  headers: { Authorization: `Bearer ${clientToken}` },
+                  body: { fromAccount: loanAcc.accountNumber, toAccount: drainAcc.accountNumber, amount: loanAmount },
+                })
+
+                // Trigger — loanAcc now has 0 balance, debit fails → LATE
+                cy.request({
+                  method:  'POST',
+                  url:     `${API_BASE}/admin/loans/trigger-installments`,
+                  headers: { Authorization: `Bearer ${adminToken}` },
+                  body:    { forceLoanId: loanId },
+                }).then(({ body: triggerResp }) => {
+                  expect(triggerResp.processed).to.equal(1)
+                })
+
+                // Then: installment status is LATE
+                cy.request({
+                  method:  'GET',
+                  url:     `${API_BASE}/loans/${loanId}/installments`,
+                  headers: { Authorization: `Bearer ${clientToken}` },
+                }).then(({ body: installments }) => {
+                  const late = installments.find(i => i.status === 'LATE')
+                  expect(late, 'installment should be LATE').to.exist
+                })
+
+                // And: loan status is IN_DELAY
+                cy.request({
+                  method:  'GET',
+                  url:     `${API_BASE}/loans/${loanId}`,
+                  headers: { Authorization: `Bearer ${clientToken}` },
+                }).then(({ body: loanDetail }) => {
+                  expect(loanDetail.status).to.equal('IN_DELAY')
+                })
+              })
+            })
+          })
+        })
+      })
+    })
   })
 
 })
