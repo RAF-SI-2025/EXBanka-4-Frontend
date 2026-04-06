@@ -8,8 +8,7 @@ import { useClientPayments } from '../../context/ClientPaymentsContext'
 import { NAV_ITEMS } from '../../layouts/ClientPortalLayout'
 import { fmt } from '../../utils/formatting'
 import { useRecipients } from '../../context/RecipientsContext'
-
-const EXCHANGE_RATE = 117.35
+import { exchangeService } from '../../services/exchangeService'
 
 function BalanceCarousel({ accounts, onRename }) {
   const multi = accounts.length > 1
@@ -152,7 +151,9 @@ export default function ClientHomePage() {
   const navigate = useNavigate()
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [rsd, setRsd] = useState('')
-  const [eur, setEur] = useState('')
+  const [foreign, setForeign] = useState('')
+  const [exchangeRates, setExchangeRates] = useState([])
+  const [selectedCurrency, setSelectedCurrency] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const myAccountNumbers = new Set(accounts.map((a) => a.accountNumber))
@@ -161,6 +162,13 @@ export default function ClientHomePage() {
   useEffect(() => {
     if (clientUser) reloadAccounts()
   }, [clientUser])
+
+  useEffect(() => {
+    exchangeService.getRates().then((rates) => {
+      setExchangeRates(rates)
+      if (rates.length > 0) setSelectedCurrency(rates[0].currencyCode)
+    }).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (clientUser) return
@@ -181,15 +189,24 @@ export default function ClientHomePage() {
     navigate('/client')
   }
 
+  const currentRate = exchangeRates.find((r) => r.currencyCode === selectedCurrency)?.sellingRate ?? null
+
   function onRsdChange(e) {
     const v = e.target.value
     setRsd(v)
-    setEur(v === '' ? '' : (parseFloat(v) / EXCHANGE_RATE).toFixed(2))
+    setForeign(v === '' || !currentRate ? '' : (parseFloat(v) / currentRate).toFixed(2))
   }
-  function onEurChange(e) {
+  function onForeignChange(e) {
     const v = e.target.value
-    setEur(v)
-    setRsd(v === '' ? '' : (parseFloat(v) * EXCHANGE_RATE).toFixed(2))
+    setForeign(v)
+    setRsd(v === '' || !currentRate ? '' : (parseFloat(v) * currentRate).toFixed(2))
+  }
+  function onCurrencyChange(e) {
+    const newCurrency = e.target.value
+    setSelectedCurrency(newCurrency)
+    const rate = exchangeRates.find((r) => r.currencyCode === newCurrency)?.sellingRate ?? null
+    if (rsd !== '' && rate) setForeign((parseFloat(rsd) / rate).toFixed(2))
+    else if (foreign !== '' && rate) setRsd((parseFloat(foreign) * rate).toFixed(2))
   }
 
   return (
@@ -436,7 +453,9 @@ export default function ClientHomePage() {
                   <div style={{ gridArea: 'exchange' }} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl p-5">
                     <div className="flex items-center justify-between mb-4">
                       <p className="text-xs tracking-widest uppercase text-slate-400 dark:text-slate-500">Exchange calculator</p>
-                      <span className="text-xs text-slate-400 dark:text-slate-500">1 EUR = {EXCHANGE_RATE} RSD</span>
+                      {currentRate && (
+                        <span className="text-xs text-slate-400 dark:text-slate-500">1 {selectedCurrency} = {currentRate} RSD</span>
+                      )}
                     </div>
                     <div className="flex items-end gap-4">
                       <div className="flex-1">
@@ -449,10 +468,19 @@ export default function ClientHomePage() {
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <label className="text-xs tracking-widest uppercase text-slate-400 dark:text-slate-500 mb-1.5 block">EUR</label>
-                        <input type="number" value={eur} onChange={onEurChange} placeholder="0.00" className="input-field" />
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <select
+                            value={selectedCurrency}
+                            onChange={onCurrencyChange}
+                            className="text-xs tracking-widest uppercase text-slate-400 dark:text-slate-500 bg-transparent border-none outline-none cursor-pointer"
+                          >
+                            {exchangeRates.map((r) => (
+                              <option key={r.currencyCode} value={r.currencyCode}>{r.currencyCode}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <input type="number" value={foreign} onChange={onForeignChange} placeholder="0.00" className="input-field" />
                       </div>
-                      <button className="btn-primary shrink-0">Convert</button>
                     </div>
                   </div>
 

@@ -8,7 +8,7 @@ function toPayment(p) {
     fromAccount:      p.fromAccount,
     recipient:        p.recipient,
     recipientAccount: p.toAccount,
-    amount:           p.finalAmount,
+    amount:           p.initialAmount,
     fee:              p.fee,
     currency:         p.currency,
     status:           p.status?.toLowerCase(),
@@ -45,5 +45,27 @@ export const paymentService = {
       purpose,
     })
     return data
+  },
+
+  async createPaymentApproval({ fromAccount, recipientName, recipientAccount, amount, paymentCode, referenceNumber, purpose }) {
+    const payload = JSON.stringify({
+      fromAccount:      fromAccount.replace(/-/g, ''),
+      recipientName,
+      recipientAccount: recipientAccount.replace(/-/g, ''),
+      amount,
+      paymentCode,
+      referenceNumber: referenceNumber || '',
+      purpose,
+    })
+    const { data } = await clientApiClient.post('/api/mobile/approvals', {
+      actionType: 'PAYMENT',
+      payload,
+    })
+    return data // { id, status, ... }
+  },
+
+  async pollApproval(id) {
+    const { data } = await clientApiClient.get(`/api/approvals/${id}/poll`)
+    return data // { status }
   },
 }

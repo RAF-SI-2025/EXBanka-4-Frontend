@@ -27,6 +27,7 @@ export class BankAccount {
     monthlyLimit,
     dailySpending,
     monthlySpending,
+    company,
   }) {
     this.id                  = id
     this.accountNumber       = accountNumber
@@ -58,6 +59,8 @@ export class BankAccount {
     this.monthlyLimit        = monthlyLimit        ?? 1000000  // max transaction amount per month
     this.dailySpending       = dailySpending       ?? 0    // total spent today
     this.monthlySpending     = monthlySpending     ?? 0    // total spent this month
+    // Business accounts only: { name, pib, registrationNumber, address, activityCode }
+    this.company             = company             ?? null
   }
 
   get ownerFullName() {
@@ -72,6 +75,12 @@ export class BankAccount {
   get currencyType() {
     return this.currency === 'RSD' ? 'current' : 'foreign'
   }
+}
+
+// Formats a raw accountType string for display (e.g. "foreign_currency" → "Foreign Currency")
+export function formatAccountType(type) {
+  if (!type) return '—'
+  return type.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
 
 // ─── Subtype labels ───────────────────────────────────────────────────────────
@@ -99,12 +108,12 @@ export function bankAccountFromApi(data) {
     accountNumber:    data.accountNumber,
     accountName:      data.accountName    ?? null,
     ownerId:          data.ownerId        ?? null,
-    ownerFirstName:   data.ownerFirstName ?? null,
-    ownerLastName:    data.ownerLastName  ?? null,
+    ownerFirstName:   data.ownerFirstName ?? (data.owner ? data.owner.split(' ')[0] : null),
+    ownerLastName:    data.ownerLastName  ?? (data.owner ? data.owner.split(' ').slice(1).join(' ') : null),
     createdByEmployeeId: data.employeeId  ?? null,
     currency:         data.currency ?? data.currencyCode ?? 'RSD',
-    type:             data.accountType?.toUpperCase() === 'BUSINESS' ? 'business' : 'personal',
-    subtype:          data.accountType ? data.accountType.toLowerCase() : null,
+    type:             data.accountType === 'business' || data.accountType === 'personal' ? data.accountType : (data.accountType?.toUpperCase() === 'BUSINESS' ? 'business' : 'personal'),
+    subtype:          data.accountSubtype ?? null,
     status:           data.status ? data.status.toLowerCase() : 'active',
     balance:          data.balance        ?? 0,
     availableBalance: data.availableBalance ?? 0,
@@ -112,5 +121,6 @@ export function bankAccountFromApi(data) {
     monthlyLimit:     data.monthlyLimit   ?? 1000000,
     dailySpending:    data.dailySpent     ?? 0,
     monthlySpending:  data.monthlySpent   ?? 0,
+    company:          data.company        ?? null,
   })
 }

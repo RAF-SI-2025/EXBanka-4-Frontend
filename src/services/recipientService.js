@@ -20,4 +20,8 @@ export const recipientService = {
   async deleteRecipient(id) {
     await clientApiClient.delete(`/api/recipients/${id}`)
   },
+
+  async reorderRecipients(orderedIds) {
+    await clientApiClient.put('/api/recipients/reorder', { orderedIds })
+  },
 }

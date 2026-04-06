@@ -21,6 +21,7 @@ import ClientsPage from './pages/employee/ClientsPage'
 import ClientDetailPage from './pages/employee/ClientDetailPage'
 import NewClientPage from './pages/employee/NewClientPage'
 import ClientAccountsPage from './pages/employee/ClientAccountsPage'
+import BankAccountsPage from './pages/employee/BankAccountsPage'
 import AccountDetailPage from './pages/employee/AccountDetailPage'
 import NewAccountPage from './pages/employee/NewAccountPage'
 import ClientLoginPage from './pages/client/ClientLoginPage'
@@ -35,10 +36,16 @@ import ClientPaymentVerifyPage from './pages/client/ClientPaymentVerifyPage'
 import ClientTransfersPage from './pages/client/ClientTransfersPage'
 import ClientExchangePage from './pages/client/ClientExchangePage'
 import ClientCardsPage from './pages/client/ClientCardsPage'
+import ClientCardRequestPage from './pages/client/ClientCardRequestPage'
+import ClientCardConfirmPage from './pages/client/ClientCardConfirmPage'
 import ClientLoansPage from './pages/client/ClientLoansPage'
+import ClientLoanDetailPage from './pages/client/ClientLoanDetailPage'
+import ClientLoanApplyPage from './pages/client/ClientLoanApplyPage'
 import ClientRecipientsPage from './pages/client/ClientRecipientsPage'
 import SetPasswordPage from './pages/employee/SetPasswordPage'
 import ResetPasswordPage from './pages/employee/ResetPasswordPage'
+import EmployeeLoanApplicationsPage from './pages/employee/EmployeeLoanApplicationsPage'
+import EmployeeLoansPage from './pages/employee/EmployeeLoansPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
@@ -68,6 +75,9 @@ function App() {
               <Route path="/admin/accounts" element={<ClientAccountsPage />} />
               <Route path="/admin/accounts/new" element={<NewAccountPage />} />
               <Route path="/admin/accounts/:id" element={<AccountDetailPage />} />
+              <Route path="/admin/bank-accounts" element={<BankAccountsPage />} />
+              <Route path="/admin/loans/applications" element={<EmployeeLoanApplicationsPage />} />
+              <Route path="/admin/loans" element={<EmployeeLoansPage />} />
             </Route>
           </Route>
 
@@ -90,7 +100,11 @@ function App() {
           <Route path="/client/transfers" element={<ClientTransfersPage />} />
           <Route path="/client/exchange" element={<ClientExchangePage />} />
           <Route path="/client/cards" element={<ClientCardsPage />} />
+          <Route path="/client/cards/request" element={<ClientCardRequestPage />} />
+          <Route path="/client/cards/confirm" element={<ClientCardConfirmPage />} />
           <Route path="/client/loans" element={<ClientLoansPage />} />
+          <Route path="/client/loans/apply" element={<ClientLoanApplyPage />} />
+          <Route path="/client/loans/:id" element={<ClientLoanDetailPage />} />
           <Route path="/client/recipients" element={<ClientRecipientsPage />} />
 
           <Route path="*" element={<NotFoundPage />} />

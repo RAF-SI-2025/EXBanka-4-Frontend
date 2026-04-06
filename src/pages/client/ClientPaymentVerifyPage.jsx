@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useApiError } from '../../context/ApiErrorContext'
 import { paymentService } from '../../services/paymentService'
 import { useClientPayments } from '../../context/ClientPaymentsContext'
+
+const POLL_INTERVAL = 3000
 
 function fmt(n, currency) {
   return n.toLocaleString('sr-RS', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ` ${currency}`
@@ -25,8 +27,63 @@ export default function ClientPaymentVerifyPage() {
   const { state } = useLocation()
   const { addSuccess } = useApiError()
   const { reload: reloadPayments } = useClientPayments()
-  const [confirmed, setConfirmed] = useState(false)
-  const [loading, setLoading]     = useState(false)
+  // phase: 'creating' | 'waiting' | 'approved' | 'rejected' | 'expired' | 'error'
+  const [phase, setPhase] = useState('creating')
+  const [errorMsg, setErrorMsg] = useState('')
+  const pollRef = useRef(null)
+
+  useEffect(() => {
+    if (!state) return
+
+    let cancelled = false
+
+    async function start() {
+      try {
+        const approval = await paymentService.createPaymentApproval({
+          fromAccount:      state.fromAccount.accountNumber,
+          recipientName:    state.recipientName,
+          recipientAccount: state.recipientAccount,
+          amount:           state.amount,
+          paymentCode:      state.paymentCode,
+          referenceNumber:  state.referenceNumber,
+          purpose:          state.purpose,
+        })
+        if (cancelled) return
+        const approvalId = approval.id
+        setPhase('waiting')
+        pollRef.current = setInterval(async () => {
+          try {
+            const result = await paymentService.pollApproval(approvalId)
+            if (cancelled) return
+            if (result.status === 'APPROVED') {
+              clearInterval(pollRef.current)
+              reloadPayments()
+              addSuccess(`Payment to ${state.recipientName} has been submitted.`, 'Payment Confirmed')
+              setPhase('approved')
+            } else if (result.status === 'REJECTED') {
+              clearInterval(pollRef.current)
+              setPhase('rejected')
+            } else if (result.status === 'EXPIRED') {
+              clearInterval(pollRef.current)
+              setPhase('expired')
+            }
+          } catch {
+            // keep polling on transient errors
+          }
+        }, POLL_INTERVAL)
+      } catch (err) {
+        if (cancelled) return
+        setErrorMsg(err?.response?.data?.error || 'Failed to create approval request.')
+        setPhase('error')
+      }
+    }
+
+    start()
+    return () => {
+      cancelled = true
+      if (pollRef.current) clearInterval(pollRef.current)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // If landed here directly without payment data, go back
   if (!state) {
@@ -42,7 +99,7 @@ export default function ClientPaymentVerifyPage() {
 
   const { fromAccount, recipientName, recipientAccount, amount, paymentCode, referenceNumber, purpose } = state
 
-  if (confirmed) {
+  if (phase === 'approved') {
     return (
       <ClientPortalLayout>
         <div className="px-8 py-8 max-w-2xl mx-auto w-full">
@@ -66,13 +123,34 @@ export default function ClientPaymentVerifyPage() {
               >
                 New Payment
               </button>
-              <button
-                onClick={() => navigate('/client/payments')}
-                className="btn-primary"
-              >
+              <button onClick={() => navigate('/client/payments')} className="btn-primary">
                 All Payments
               </button>
             </div>
+          </div>
+        </div>
+      </ClientPortalLayout>
+    )
+  }
+
+  if (phase === 'rejected' || phase === 'expired' || phase === 'error') {
+    const message = phase === 'rejected'
+      ? 'Payment was rejected on your mobile app.'
+      : phase === 'expired'
+        ? 'The approval request expired. Please try again.'
+        : errorMsg
+    return (
+      <ClientPortalLayout>
+        <div className="px-8 py-8 max-w-2xl mx-auto w-full">
+          <div className="bg-white dark:bg-slate-900 border border-red-200 dark:border-red-800 rounded-xl p-12 text-center">
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-6">
+              <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <p className="text-xs tracking-widest uppercase text-red-600 dark:text-red-400 mb-3">Payment Not Completed</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">{message}</p>
+            <button onClick={() => navigate(-1)} className="btn-primary">Go Back</button>
           </div>
         </div>
       </ClientPortalLayout>
@@ -126,34 +204,32 @@ export default function ClientPaymentVerifyPage() {
           <Row label="Purpose"          value={purpose} />
         </div>
 
-        {/* Simulated app confirm button */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 text-center">
-          <p className="text-xs tracking-widest uppercase text-slate-400 dark:text-slate-500 mb-1">Mobile app</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-light mb-5">Tap confirm below to simulate the in-app confirmation.</p>
+        {/* Waiting indicator */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 flex flex-col items-center gap-4">
+          <div className="w-8 h-8 rounded-full border-2 border-violet-500 border-t-transparent animate-spin" />
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-light">
+            {phase === 'creating' ? 'Sending request to mobile app…' : 'Waiting for approval on your mobile app…'}
+          </p>
           <button
-            disabled={loading}
+            disabled={phase === 'creating'}
             onClick={async () => {
-              setLoading(true)
+              if (pollRef.current) clearInterval(pollRef.current)
               try {
                 await paymentService.createPayment({
-                  fromAccount:      fromAccount.accountNumber,
-                  recipientName,
-                  recipientAccount,
-                  amount,
-                  paymentCode,
-                  referenceNumber,
-                  purpose,
+                  fromAccount: fromAccount.accountNumber,
+                  recipientName, recipientAccount, amount, paymentCode, referenceNumber, purpose,
                 })
                 reloadPayments()
-                setConfirmed(true)
                 addSuccess(`Payment to ${recipientName} has been submitted.`, 'Payment Confirmed')
-              } finally {
-                setLoading(false)
+                setPhase('approved')
+              } catch {
+                setPhase('error')
+                setErrorMsg('Payment failed.')
               }
             }}
-            className="btn-primary px-10"
+            className="text-xs tracking-widest uppercase text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors disabled:opacity-40"
           >
-            {loading ? 'Processing…' : 'Confirm'}
+            Confirm without mobile app
           </button>
         </div>
 

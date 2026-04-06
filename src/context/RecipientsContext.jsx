@@ -40,8 +40,9 @@ export function RecipientsProvider({ children }) {
     setRecipients((prev) => prev.filter((r) => r.id !== id))
   }
 
-  function reorderRecipients(newList) {
+  async function reorderRecipients(newList) {
     setRecipients(newList)
+    await recipientService.reorderRecipients(newList.map((r) => r.id))
   }
 
   useEffect(() => { if (clientUser) reload() }, [clientUser])

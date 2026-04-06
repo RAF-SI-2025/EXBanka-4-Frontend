@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useClientPayments } from '../../context/ClientPaymentsContext'
+import { useClientAccounts } from '../../context/ClientAccountsContext'
 import { PAYMENT_STATUS_STYLES } from '../../models/Payment'
 import { fmt } from '../../utils/formatting'
 
@@ -18,6 +20,8 @@ export default function ClientPaymentDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { payments } = useClientPayments()
+  const { accounts } = useClientAccounts()
+  const myAccountNumbers = useMemo(() => new Set(accounts.map((a) => a.accountNumber)), [accounts])
 
   const payment = payments.find((p) => p.id === Number(id))
 
@@ -64,9 +68,14 @@ export default function ClientPaymentDetailPage() {
         {/* Amount */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6">
           <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-4">Amount</p>
-          <p className={`font-serif text-4xl font-light leading-none ${payment.amount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
-            {payment.amount > 0 ? '+' : ''}{fmt(payment.amount)}
-          </p>
+          {(() => {
+            const isOutgoing = myAccountNumbers.has(payment.fromAccount)
+            return (
+              <p className={`font-serif text-4xl font-light leading-none ${isOutgoing ? 'text-slate-900 dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                {isOutgoing ? '-' : '+'}{fmt(payment.amount)}
+              </p>
+            )
+          })()}
           <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">{payment.currency}</p>
         </div>
 

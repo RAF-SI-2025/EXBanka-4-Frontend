@@ -18,27 +18,31 @@ export const accountService = {
   },
 
   async getAccountById(id) {
-    const { data } = await apiClient.get(`/api/accounts/${id}`)
+    const { data } = await apiClient.get(`/api/admin/accounts/${id}`)
     return bankAccountFromApi({ id, ...data })
   },
 
-  async createAccount({ ownerId, ownerFirstName, ownerLastName, type, subtype, accountName, currencyType, currency }) {
-    let accountType
-    if (currencyType === 'foreign') {
-      accountType = 'FOREIGN_CURRENCY'
-    } else if (type === 'business') {
-      accountType = 'BUSINESS'
-    } else if (subtype === 'savings') {
-      accountType = 'SAVINGS'
-    } else {
-      accountType = 'CURRENT'
-    }
+  async createAccount({ ownerId, ownerFirstName, ownerLastName, type, subtype, accountName, currencyType, currency, companyData, dailyLimit, monthlyLimit, createCard, cardLimit }) {
     const { data } = await apiClient.post('/api/accounts/create', {
-      clientId:     ownerId,
-      accountType,
+      clientId:       ownerId,
+      accountType:    type,
+      accountSubtype: subtype,
       accountName,
-      currencyCode: currency,
+      currencyCode:   currency,
+      ...(companyData  && { companyData }),
+      ...(dailyLimit   && { dailyLimit }),
+      ...(monthlyLimit && { monthlyLimit }),
+      ...(createCard   && { createCard: true }),
+      ...(createCard && cardLimit && { cardLimit }),
     })
     return bankAccountFromApi({ ownerFirstName, ownerLastName, ...data })
+  },
+
+  async updateAccountLimits(id, { dailyLimit, monthlyLimit }) {
+    await apiClient.put(`/api/accounts/${id}/limits`, { dailyLimit, monthlyLimit })
+  },
+
+  async deleteAccount(id) {
+    await apiClient.delete(`/api/accounts/${id}`)
   },
 }
