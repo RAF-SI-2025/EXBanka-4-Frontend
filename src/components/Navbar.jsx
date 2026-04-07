@@ -57,6 +57,9 @@ function Navbar() {
             {user && (
               <NavLink to="/admin/loans" className={linkClass}>Loans</NavLink>
             )}
+            {user && (
+              <NavLink to="/admin/stock-exchanges" className={linkClass}>Stock Exchanges</NavLink>
+            )}
           </div>
 
           {/* Desktop CTA */}
@@ -130,6 +133,9 @@ function Navbar() {
             )}
             {user && (
               <NavLink to="/admin/loans" className={linkClass} onClick={() => setMenuOpen(false)}>Loans</NavLink>
+            )}
+            {user && (
+              <NavLink to="/admin/stock-exchanges" className={linkClass} onClick={() => setMenuOpen(false)}>Stock Exchanges</NavLink>
             )}
             <div className="flex items-center gap-4">
               <button
