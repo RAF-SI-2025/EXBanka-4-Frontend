@@ -10,6 +10,8 @@ export const PERMISSIONS = {
   canProcessTransactions:'Process Transactions',
   canManageEmployees:    'Manage Employees',
   canViewReports:        'View Reports',
+  isAgent:               'Agent',
+  isSupervisor:          'Supervisor',
 }
 
 export const DEFAULT_PERMISSIONS = {
@@ -20,6 +22,8 @@ export const DEFAULT_PERMISSIONS = {
   canProcessTransactions: false,
   canManageEmployees:     false,
   canViewReports:         false,
+  isAgent:                false,
+  isSupervisor:           false,
 }
 
 /**
@@ -81,6 +85,8 @@ const DOZVOLE_MAP = {
   canProcessTransactions: 'TRANSACTIONS',
   canManageEmployees:     'EMPLOYEES',
   canViewReports:         'REPORTS',
+  isAgent:                'AGENT',
+  isSupervisor:           'SUPERVISOR',
 }
 
 /**

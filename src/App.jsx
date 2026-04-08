@@ -46,6 +46,7 @@ import SetPasswordPage from './pages/employee/SetPasswordPage'
 import ResetPasswordPage from './pages/employee/ResetPasswordPage'
 import EmployeeLoanApplicationsPage from './pages/employee/EmployeeLoanApplicationsPage'
 import EmployeeLoansPage from './pages/employee/EmployeeLoansPage'
+import ActuaryManagementPage from './pages/employee/ActuaryManagementPage'
 import StockExchangesPage from './pages/employee/StockExchangesPage'
 import NotFoundPage from './pages/NotFoundPage'
 
@@ -79,6 +80,7 @@ function App() {
               <Route path="/admin/bank-accounts" element={<BankAccountsPage />} />
               <Route path="/admin/loans/applications" element={<EmployeeLoanApplicationsPage />} />
               <Route path="/admin/loans" element={<EmployeeLoansPage />} />
+              <Route path="/admin/actuaries" element={<ActuaryManagementPage />} />
               <Route path="/admin/stock-exchanges" element={<StockExchangesPage />} />
             </Route>
           </Route>

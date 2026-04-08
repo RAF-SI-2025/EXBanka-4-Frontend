@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { useEmployees } from '../../context/EmployeesContext'
 import { PERMISSIONS } from '../../models/Employee'
+import { actuaryService } from '../../services/actuaryService'
+import { fmt } from '../../utils/formatting'
 
 export default function EmployeeDetailPage() {
   const { id } = useParams()
@@ -18,6 +20,15 @@ export default function EmployeeDetailPage() {
 
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({})
+
+  const [actuaryInfo, setActuaryInfo] = useState(null)
+  useEffect(() => {
+    if (!emp) return
+    if (!emp.permissions?.isAgent && !emp.permissions?.isSupervisor) return
+    actuaryService.getActuaries()
+      .then((list) => setActuaryInfo(list.find((a) => a.employeeId === emp.id) ?? null))
+      .catch(() => {})
+  }, [emp?.id, emp?.permissions?.isAgent, emp?.permissions?.isSupervisor])
 
   if (!emp) {
     return (
@@ -87,11 +98,16 @@ export default function EmployeeDetailPage() {
       setAdminConfirm(true)
       return
     }
-    setForm((prev) => ({ ...prev, permissions: { ...prev.permissions, [name]: checked } }))
+    setForm((prev) => {
+      const perms = { ...prev.permissions, [name]: checked }
+      if (name === 'isAgent' && checked)      perms.isSupervisor = false
+      if (name === 'isSupervisor' && checked) perms.isAgent = false
+      return { ...prev, permissions: perms }
+    })
   }
 
   function confirmAdmin() {
-    setForm((prev) => ({ ...prev, permissions: { ...prev.permissions, isAdmin: pendingAdminValue } }))
+    setForm((prev) => ({ ...prev, permissions: { ...prev.permissions, isAdmin: pendingAdminValue, isSupervisor: true } }))
     setAdminConfirm(false)
   }
 
@@ -198,8 +214,23 @@ export default function EmployeeDetailPage() {
                     className="w-4 h-4 accent-amber-600"
                   />
                 </div>
+                {/* Supervisor — visually separated */}
+                <div className="mb-3 rounded-lg border border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs tracking-widest uppercase text-blue-700 dark:text-blue-400 font-semibold">Supervisor</span>
+                    <p className="text-xs text-blue-600 dark:text-blue-500 mt-0.5">Manages agents and their limits</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    name="isSupervisor"
+                    checked={form.permissions?.isSupervisor ?? false}
+                    onChange={handlePermissionChange}
+                    disabled={form.permissions?.isAdmin ?? false}
+                    className="w-4 h-4 accent-blue-600 disabled:opacity-50"
+                  />
+                </div>
                 {/* Other permissions */}
-                {Object.entries(PERMISSIONS).filter(([key]) => key !== 'isAdmin').map(([key, label]) => (
+                {Object.entries(PERMISSIONS).filter(([key]) => key !== 'isAdmin' && key !== 'isSupervisor').map(([key, label]) => (
                   <div key={key} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
                     <span className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400">{label}</span>
                     <input
@@ -266,8 +297,22 @@ export default function EmployeeDetailPage() {
                     {emp.permissions?.isAdmin ? 'Granted' : 'Denied'}
                   </span>
                 </div>
+                {/* Supervisor row */}
+                <div className="mb-3 rounded-lg border border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <span className="text-xs tracking-widest uppercase text-blue-700 dark:text-blue-400 font-semibold">Supervisor</span>
+                    <p className="text-xs text-blue-600 dark:text-blue-500 mt-0.5">Manages agents and their limits</p>
+                  </div>
+                  <span className={`text-xs font-medium tracking-wide px-2 py-0.5 rounded-full ${
+                    emp.permissions?.isSupervisor
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400'
+                      : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                  }`}>
+                    {emp.permissions?.isSupervisor ? 'Granted' : 'Denied'}
+                  </span>
+                </div>
                 {/* Other permissions */}
-                {Object.entries(PERMISSIONS).filter(([key]) => key !== 'isAdmin').map(([key, label]) => (
+                {Object.entries(PERMISSIONS).filter(([key]) => key !== 'isAdmin' && key !== 'isSupervisor').map(([key, label]) => (
                   <div key={key} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
                     <span className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400">{label}</span>
                     <span className={`text-xs font-medium tracking-wide px-2 py-0.5 rounded-full ${
@@ -280,6 +325,29 @@ export default function EmployeeDetailPage() {
                   </div>
                 ))}
               </Section>
+
+              {(emp.permissions?.isAgent || emp.permissions?.isSupervisor) && (
+                <Section title="Actuary">
+                  {emp.permissions?.isAgent ? (
+                    <>
+                      <Row label="Limit"        value={actuaryInfo ? fmt(actuaryInfo.limit, 'RSD') : '—'} />
+                      <Row label="Used Limit"   value={actuaryInfo ? fmt(actuaryInfo.usedLimit, 'RSD') : '—'} />
+                      <div className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                        <span className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400">Need Approval</span>
+                        <span className={`text-xs font-medium tracking-wide px-2 py-0.5 rounded-full ${
+                          actuaryInfo?.needApproval
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
+                            : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                        }`}>
+                          {actuaryInfo?.needApproval ? 'Yes' : 'No'}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <Row label="Limit" value="No limit" />
+                  )}
+                </Section>
+              )}
 
               <div className="pt-4">
                 <button
