@@ -2,9 +2,73 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { useEmployees } from '../../context/EmployeesContext'
-import { PERMISSIONS } from '../../models/Employee'
+import { DEFAULT_PERMISSIONS } from '../../models/Employee'
 import { actuaryService } from '../../services/actuaryService'
 import { fmt } from '../../utils/formatting'
+
+// ── Role definitions ──────────────────────────────────────────────────────────
+
+const ROLE_OPTIONS = [
+  {
+    key:         'none',
+    label:       'None',
+    description: 'No system access',
+  },
+  {
+    key:         'clerk',
+    label:       'Clerk',
+    description: 'Clients, Accounts',
+  },
+  {
+    key:         'creditAnalyst',
+    label:       'Credit Analyst',
+    description: 'Clients, Accounts, Loans',
+  },
+  {
+    key:         'agent',
+    label:       'Agent',
+    description: 'Stock Exchanges',
+  },
+  {
+    key:         'supervisor',
+    label:       'Supervisor',
+    description: 'Actuaries, Stock Exchanges',
+  },
+  {
+    key:         'admin',
+    label:       'Admin',
+    description: 'Full system access',
+  },
+]
+
+const ROLE_PERMISSIONS = {
+  none:         { ...DEFAULT_PERMISSIONS },
+  clerk:        { ...DEFAULT_PERMISSIONS, canViewClients: true },
+  creditAnalyst:{ ...DEFAULT_PERMISSIONS, canViewClients: true, canApproveLoans: true },
+  agent:        { ...DEFAULT_PERMISSIONS, isAgent: true },
+  supervisor:   { ...DEFAULT_PERMISSIONS, isSupervisor: true },
+  admin:        Object.fromEntries(Object.keys(DEFAULT_PERMISSIONS).map((k) => [k, true])),
+}
+
+const ROLE_STYLES = {
+  admin:        { badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400',  radio: 'accent-amber-600'  },
+  supervisor:   { badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400',      radio: 'accent-blue-600'   },
+  agent:        { badge: 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-400', radio: 'accent-violet-600' },
+  creditAnalyst:{ badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400', radio: 'accent-emerald-600' },
+  clerk:        { badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400', radio: 'accent-emerald-600' },
+  none:         { badge: 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400',     radio: 'accent-slate-400'  },
+}
+
+function resolveRole(permissions) {
+  if (permissions?.isAdmin)         return 'admin'
+  if (permissions?.isSupervisor)    return 'supervisor'
+  if (permissions?.isAgent)         return 'agent'
+  if (permissions?.canApproveLoans) return 'creditAnalyst'
+  if (permissions?.canViewClients)  return 'clerk'
+  return 'none'
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EmployeeDetailPage() {
   const { id } = useParams()
@@ -18,8 +82,11 @@ export default function EmployeeDetailPage() {
 
   useWindowTitle(emp ? `${emp.fullName} | AnkaBanka` : 'Employee | AnkaBanka')
 
-  const [editing, setEditing] = useState(false)
-  const [form, setForm] = useState({})
+  const [editing, setEditing]       = useState(false)
+  const [form, setForm]             = useState({})
+  const [selectedRole, setSelectedRole] = useState('none')
+  const [adminConfirm, setAdminConfirm] = useState(false)
+  const [pendingRole, setPendingRole]   = useState(null)
 
   const [actuaryInfo, setActuaryInfo] = useState(null)
   useEffect(() => {
@@ -41,6 +108,7 @@ export default function EmployeeDetailPage() {
   }
 
   function startEdit() {
+    const role = resolveRole(emp.permissions)
     setForm({
       firstName:   emp.firstName,
       lastName:    emp.lastName,
@@ -56,6 +124,7 @@ export default function EmployeeDetailPage() {
       active:      emp.active,
       permissions: { ...emp.permissions },
     })
+    setSelectedRole(role)
     setEditing(true)
   }
 
@@ -87,33 +156,29 @@ export default function EmployeeDetailPage() {
     if (errs[name]) setFieldErrors((prev) => ({ ...prev, [name]: errs[name] }))
   }
 
-  const [fieldErrors, setFieldErrors] = useState({})
-  const [adminConfirm, setAdminConfirm] = useState(false)
-  const [pendingAdminValue, setPendingAdminValue] = useState(false)
-
-  function handlePermissionChange(e) {
-    const { name, checked } = e.target
-    if (name === 'isAdmin' && checked) {
-      setPendingAdminValue(true)
+  function handleRoleChange(roleKey) {
+    if (roleKey === 'admin') {
+      setPendingRole(roleKey)
       setAdminConfirm(true)
       return
     }
-    setForm((prev) => {
-      const perms = { ...prev.permissions, [name]: checked }
-      if (name === 'isAgent' && checked)      perms.isSupervisor = false
-      if (name === 'isSupervisor' && checked) perms.isAgent = false
-      return { ...prev, permissions: perms }
-    })
+    setSelectedRole(roleKey)
+    setForm((prev) => ({ ...prev, permissions: { ...ROLE_PERMISSIONS[roleKey] } }))
   }
 
   function confirmAdmin() {
-    setForm((prev) => ({ ...prev, permissions: { ...prev.permissions, isAdmin: pendingAdminValue, isSupervisor: true } }))
+    setSelectedRole(pendingRole)
+    setForm((prev) => ({ ...prev, permissions: { ...ROLE_PERMISSIONS.admin } }))
     setAdminConfirm(false)
+    setPendingRole(null)
   }
 
   function cancelAdmin() {
     setAdminConfirm(false)
+    setPendingRole(null)
   }
+
+  const [fieldErrors, setFieldErrors] = useState({})
 
   async function handleSave() {
     const errs = validate()
@@ -130,6 +195,9 @@ export default function EmployeeDetailPage() {
   function handleCancel() {
     setEditing(false)
   }
+
+  const viewRole = resolveRole(emp.permissions)
+  const viewRoleMeta = ROLE_OPTIONS.find((r) => r.key === viewRole)
 
   return (
     <>
@@ -199,49 +267,32 @@ export default function EmployeeDetailPage() {
                 </div>
               </Section>
 
-              <Section title="Permissions">
-                {/* Admin — visually separated */}
-                <div className="mb-3 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs tracking-widest uppercase text-amber-700 dark:text-amber-400 font-semibold">Admin</span>
-                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">Full system access — grants all privileges</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    name="isAdmin"
-                    checked={form.permissions?.isAdmin ?? false}
-                    onChange={handlePermissionChange}
-                    className="w-4 h-4 accent-amber-600"
-                  />
+              <Section title="Role">
+                <div className="pt-1 space-y-2">
+                  {ROLE_OPTIONS.map((role) => (
+                    <label
+                      key={role.key}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedRole === role.key
+                          ? 'border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-900/20'
+                          : 'border-slate-200 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-700'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="role"
+                        value={role.key}
+                        checked={selectedRole === role.key}
+                        onChange={() => handleRoleChange(role.key)}
+                        className={`w-4 h-4 ${ROLE_STYLES[role.key].radio}`}
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-slate-900 dark:text-white">{role.label}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 ml-2">{role.description}</span>
+                      </div>
+                    </label>
+                  ))}
                 </div>
-                {/* Supervisor — visually separated */}
-                <div className="mb-3 rounded-lg border border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs tracking-widest uppercase text-blue-700 dark:text-blue-400 font-semibold">Supervisor</span>
-                    <p className="text-xs text-blue-600 dark:text-blue-500 mt-0.5">Manages agents and their limits</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    name="isSupervisor"
-                    checked={form.permissions?.isSupervisor ?? false}
-                    onChange={handlePermissionChange}
-                    disabled={form.permissions?.isAdmin ?? false}
-                    className="w-4 h-4 accent-blue-600 disabled:opacity-50"
-                  />
-                </div>
-                {/* Other permissions */}
-                {Object.entries(PERMISSIONS).filter(([key]) => key !== 'isAdmin' && key !== 'isSupervisor').map(([key, label]) => (
-                  <div key={key} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
-                    <span className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400">{label}</span>
-                    <input
-                      type="checkbox"
-                      name={key}
-                      checked={form.permissions?.[key] ?? false}
-                      onChange={handlePermissionChange}
-                      className="w-4 h-4 accent-violet-600"
-                    />
-                  </div>
-                ))}
               </Section>
 
               <div className="flex gap-3 pt-4">
@@ -282,48 +333,16 @@ export default function EmployeeDetailPage() {
                 <Row label="Employee ID" value={String(emp.id)} />
               </Section>
 
-              <Section title="Permissions">
-                {/* Admin row */}
-                <div className="mb-3 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs tracking-widest uppercase text-amber-700 dark:text-amber-400 font-semibold">Admin</span>
-                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5">Full system access — grants all privileges</p>
-                  </div>
-                  <span className={`text-xs font-medium tracking-wide px-2 py-0.5 rounded-full ${
-                    emp.permissions?.isAdmin
-                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
-                      : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
-                  }`}>
-                    {emp.permissions?.isAdmin ? 'Granted' : 'Denied'}
-                  </span>
-                </div>
-                {/* Supervisor row */}
-                <div className="mb-3 rounded-lg border border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <span className="text-xs tracking-widest uppercase text-blue-700 dark:text-blue-400 font-semibold">Supervisor</span>
-                    <p className="text-xs text-blue-600 dark:text-blue-500 mt-0.5">Manages agents and their limits</p>
-                  </div>
-                  <span className={`text-xs font-medium tracking-wide px-2 py-0.5 rounded-full ${
-                    emp.permissions?.isSupervisor
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400'
-                      : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
-                  }`}>
-                    {emp.permissions?.isSupervisor ? 'Granted' : 'Denied'}
-                  </span>
-                </div>
-                {/* Other permissions */}
-                {Object.entries(PERMISSIONS).filter(([key]) => key !== 'isAdmin' && key !== 'isSupervisor').map(([key, label]) => (
-                  <div key={key} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
-                    <span className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400">{label}</span>
-                    <span className={`text-xs font-medium tracking-wide px-2 py-0.5 rounded-full ${
-                      emp.permissions?.[key]
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                        : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
-                    }`}>
-                      {emp.permissions?.[key] ? 'Granted' : 'Denied'}
+              <Section title="Role">
+                <div className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                  <span className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400">Role</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-400 dark:text-slate-500">{viewRoleMeta?.description}</span>
+                    <span className={`text-xs font-semibold tracking-wide px-2.5 py-1 rounded-full ${ROLE_STYLES[viewRole].badge}`}>
+                      {viewRoleMeta?.label}
                     </span>
                   </div>
-                ))}
+                </div>
               </Section>
 
               {(emp.permissions?.isAgent || emp.permissions?.isSupervisor) && (

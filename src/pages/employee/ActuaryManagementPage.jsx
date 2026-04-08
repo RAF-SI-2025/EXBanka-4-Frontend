@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import useWindowTitle from '../../hooks/useWindowTitle'
-import { useEmployees } from '../../context/EmployeesContext'
 import { actuaryService } from '../../services/actuaryService'
 import { fmt } from '../../utils/formatting'
 import PermissionGate from '../../components/PermissionGate'
@@ -10,41 +9,31 @@ const EMPTY_FILTERS = { firstName: '', lastName: '', email: '', position: '' }
 
 export default function ActuaryManagementPage() {
   useWindowTitle('Actuaries | AnkaBanka Admin')
-  const { employees, loading: empLoading, reload } = useEmployees()
 
   const [actuaries, setActuaries] = useState([])
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [editingLimit, setEditingLimit] = useState(null) // { agentId, value }
-
-  useEffect(() => {
-    if (employees.length === 0 && !empLoading) reload()
-  }, [])
 
   useEffect(() => {
     actuaryService.getActuaries()
       .then(setActuaries)
       .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
-
-  const agents = employees.filter((e) => e.permissions?.isAgent)
-
-  const rows = agents.map((emp) => ({
-    emp,
-    info: actuaries.find((a) => a.employeeId === emp.id) ?? null,
-  }))
 
   const hasFilters = Object.values(filters).some(Boolean)
   const displayed = hasFilters
-    ? rows.filter(({ emp }) => {
+    ? actuaries.filter((a) => {
         const f = filters
         return (
-          (!f.firstName || emp.firstName.toLowerCase().includes(f.firstName.toLowerCase())) &&
-          (!f.lastName  || emp.lastName.toLowerCase().includes(f.lastName.toLowerCase()))   &&
-          (!f.email     || emp.email.toLowerCase().includes(f.email.toLowerCase()))         &&
-          (!f.position  || emp.position.toLowerCase().includes(f.position.toLowerCase()))
+          (!f.firstName || a.firstName.toLowerCase().includes(f.firstName.toLowerCase())) &&
+          (!f.lastName  || a.lastName.toLowerCase().includes(f.lastName.toLowerCase()))   &&
+          (!f.email     || a.email.toLowerCase().includes(f.email.toLowerCase()))         &&
+          (!f.position  || a.position.toLowerCase().includes(f.position.toLowerCase()))
         )
       })
-    : rows
+    : actuaries
 
   function handleFilter(e) {
     setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -135,7 +124,7 @@ export default function ActuaryManagementPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {empLoading ? (
+                  {loading ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
                         Loading…
@@ -148,27 +137,27 @@ export default function ActuaryManagementPage() {
                       </td>
                     </tr>
                   ) : (
-                    displayed.map(({ emp, info }, i) => (
+                    displayed.map((actuary, i) => (
                       <tr
-                        key={emp.id}
+                        key={actuary.employeeId}
                         className={`border-b border-slate-100 dark:border-slate-800 last:border-0 ${
                           i % 2 === 0 ? '' : 'bg-slate-50/50 dark:bg-slate-800/20'
                         }`}
                       >
                         <td className="px-6 py-4 text-slate-900 dark:text-white font-medium whitespace-nowrap">
-                          {emp.fullName}
+                          {actuary.fullName}
                         </td>
-                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{emp.email}</td>
-                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{emp.position}</td>
+                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{actuary.email}</td>
+                        <td className="px-6 py-4 text-slate-600 dark:text-slate-300">{actuary.position}</td>
                         <td className="px-6 py-4 text-slate-900 dark:text-white whitespace-nowrap">
-                          {info != null ? fmt(info.limit, 'RSD') : '—'}
+                          {actuary.limit != null ? fmt(actuary.limit, 'RSD') : '—'}
                         </td>
                         <td className="px-6 py-4 text-slate-900 dark:text-white whitespace-nowrap">
-                          {info != null ? fmt(info.usedLimit, 'RSD') : '—'}
+                          {actuary.usedLimit != null ? fmt(actuary.usedLimit, 'RSD') : '—'}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3 flex-wrap">
-                            {editingLimit?.agentId === emp.id ? (
+                            {editingLimit?.agentId === actuary.employeeId ? (
                               <div className="flex items-center gap-2">
                                 <input
                                   type="number"
@@ -176,12 +165,12 @@ export default function ActuaryManagementPage() {
                                   step="0.01"
                                   value={editingLimit.value}
                                   onChange={(e) => setEditingLimit((prev) => ({ ...prev, value: e.target.value }))}
-                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSetLimit(emp.id); if (e.key === 'Escape') setEditingLimit(null) }}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSetLimit(actuary.employeeId); if (e.key === 'Escape') setEditingLimit(null) }}
                                   className="input-field w-32 text-sm"
                                   autoFocus
                                 />
                                 <button
-                                  onClick={() => handleSetLimit(emp.id)}
+                                  onClick={() => handleSetLimit(actuary.employeeId)}
                                   className="text-xs tracking-widest uppercase text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 transition-colors"
                                 >
                                   Save
@@ -195,14 +184,14 @@ export default function ActuaryManagementPage() {
                               </div>
                             ) : (
                               <button
-                                onClick={() => setEditingLimit({ agentId: emp.id, value: info?.limit ?? '' })}
+                                onClick={() => setEditingLimit({ agentId: actuary.employeeId, value: actuary.limit ?? '' })}
                                 className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 hover:text-violet-500 transition-colors"
                               >
                                 Set limit
                               </button>
                             )}
                             <button
-                              onClick={() => handleResetUsedLimit(emp.id)}
+                              onClick={() => handleResetUsedLimit(actuary.employeeId)}
                               className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                             >
                               Reset used
@@ -215,9 +204,9 @@ export default function ActuaryManagementPage() {
                 </tbody>
               </table>
             </div>
-            {!empLoading && displayed.length > 0 && (
+            {!loading && displayed.length > 0 && (
               <div className="px-6 py-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500">
-                Showing {displayed.length}{hasFilters ? ` result${displayed.length !== 1 ? 's' : ''}` : ` of ${agents.length} agents`}
+                Showing {displayed.length}{hasFilters ? ` result${displayed.length !== 1 ? 's' : ''}` : ` of ${actuaries.length} agents`}
               </div>
             )}
           </div>

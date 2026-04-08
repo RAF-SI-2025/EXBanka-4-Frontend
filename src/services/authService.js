@@ -7,7 +7,7 @@
 
 import { apiClient, refreshClient } from './apiClient'
 import { tokenService } from './tokenService'
-import { permissionsFromDozvole } from '../models/Employee'
+import { DEFAULT_PERMISSIONS, permissionsFromClaims } from '../models/Employee'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -21,17 +21,18 @@ function decodeJwtPayload(token) {
 }
 
 function buildUserPayload(claims) {
-  const dozvole = claims.dozvole ?? []
-  const roles = dozvole.map((d) => d.toUpperCase()).includes('ADMIN')
-    ? ['ADMIN']
-    : ['USER']
+  const permissionClaims = claims.dozvole ?? []
+  const upper = permissionClaims.map((c) => c.toUpperCase())
+  const isAdmin = upper.includes('ADMIN')
   return {
     id:          claims.user_id,
     firstName:   claims.first_name ?? '',
     lastName:    claims.last_name  ?? '',
     email:       claims.email      ?? '',
-    roles,
-    permissions: permissionsFromDozvole(dozvole),
+    roles:       isAdmin ? ['ADMIN'] : ['USER'],
+    permissions: isAdmin
+      ? Object.fromEntries(Object.keys(DEFAULT_PERMISSIONS).map((k) => [k, true]))
+      : permissionsFromClaims(permissionClaims),
   }
 }
 
