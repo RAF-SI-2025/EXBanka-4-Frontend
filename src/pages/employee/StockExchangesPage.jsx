@@ -8,7 +8,11 @@ export default function StockExchangesPage() {
   const { user } = useAuth()
   const isAdmin = user?.roles?.includes('ADMIN')
 
+  const PAGE_SIZE = 10
+
   const [exchanges, setExchanges] = useState([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [testMode, setTestMode] = useState(false)
@@ -16,13 +20,16 @@ export default function StockExchangesPage() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true)
       try {
-        const [exList, tm] = await Promise.all([
-          stockExchangeService.getAll(),
+        const [{ exchanges: exList, totalCount: total }, tm] = await Promise.all([
+          stockExchangeService.getAll(page, PAGE_SIZE),
           isAdmin ? stockExchangeService.getTestMode() : Promise.resolve(false),
         ])
         setExchanges(exList)
+        setTotalCount(total)
         setTestMode(tm)
+        setError(null)
       } catch {
         setError(true)
       } finally {
@@ -30,7 +37,9 @@ export default function StockExchangesPage() {
       }
     }
     load()
-  }, [isAdmin])
+  }, [isAdmin, page])
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
   async function handleToggleTestMode() {
     setTogglingTestMode(true)
@@ -85,7 +94,7 @@ export default function StockExchangesPage() {
               disabled={togglingTestMode}
               className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {togglingTestMode ? 'Updating…' : testMode ? 'Disable Test Mode' : 'Enable Test Mode'}
+              {testMode ? 'Disable Test Mode' : 'Enable Test Mode'}
             </button>
           </div>
         )}
@@ -99,7 +108,7 @@ export default function StockExchangesPage() {
                   {['Name', 'Acronym', 'MIC Code', 'Polity', 'Currency', 'Timezone', 'Status'].map((h) => (
                     <th
                       key={h}
-                      className="px-6 py-4 text-left text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap"
+                      className={`px-6 py-4 text-left text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap${h === 'Status' ? ' w-32' : ''}`}
                     >
                       {h}
                     </th>
@@ -127,8 +136,8 @@ export default function StockExchangesPage() {
                       <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{ex.polity}</td>
                       <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{ex.currency}</td>
                       <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{ex.timezone}</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium tracking-wide rounded-full ${
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center justify-center min-w-[6rem] px-2.5 py-0.5 text-xs font-medium tracking-wide rounded-full ${
                           testMode
                             ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                             : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
@@ -142,9 +151,25 @@ export default function StockExchangesPage() {
               </tbody>
             </table>
           </div>
-          {exchanges.length > 0 && (
-            <div className="px-6 py-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500">
-              {exchanges.length} exchange{exchanges.length !== 1 ? 's' : ''}
+          {totalCount > 0 && (
+            <div className="px-6 py-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
+              <span>Page {page} of {totalPages} · {totalCount} exchange{totalCount !== 1 ? 's' : ''}</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage((p) => p - 1)}
+                  disabled={page === 1}
+                  className="px-3 py-1 border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page >= totalPages}
+                  className="px-3 py-1 border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </div>

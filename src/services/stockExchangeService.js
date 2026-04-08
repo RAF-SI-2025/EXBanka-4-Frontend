@@ -1,9 +1,9 @@
 import { apiClient } from './apiClient'
 
 export const stockExchangeService = {
-  async getAll() {
-    const { data } = await apiClient.get('/stock-exchanges', { params: { page: 1, page_size: 100 } })
-    return data.exchanges ?? []
+  async getAll(page = 1, pageSize = 10) {
+    const { data } = await apiClient.get('/stock-exchanges', { params: { page, page_size: pageSize } })
+    return { exchanges: data.exchanges ?? [], totalCount: data.totalCount ?? 0 }
   },
   async getTestMode() {
     const { data } = await apiClient.get('/stock-exchanges/test-mode')
