@@ -48,6 +48,10 @@ import EmployeeLoanApplicationsPage from './pages/employee/EmployeeLoanApplicati
 import EmployeeLoansPage from './pages/employee/EmployeeLoansPage'
 import ActuaryManagementPage from './pages/employee/ActuaryManagementPage'
 import StockExchangesPage from './pages/employee/StockExchangesPage'
+import SecuritiesPage from './pages/securities/SecuritiesPage'
+import ListingDetailPage from './pages/securities/ListingDetailPage'
+import ClientSecuritiesPage from './pages/client/ClientSecuritiesPage'
+import ClientListingDetailPage from './pages/client/ClientListingDetailPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
@@ -82,6 +86,8 @@ function App() {
               <Route path="/admin/loans" element={<EmployeeLoansPage />} />
               <Route path="/admin/actuaries" element={<ActuaryManagementPage />} />
               <Route path="/admin/stock-exchanges" element={<StockExchangesPage />} />
+              <Route path="/securities" element={<SecuritiesPage />} />
+              <Route path="/securities/:id" element={<ListingDetailPage />} />
             </Route>
           </Route>
 
@@ -110,6 +116,8 @@ function App() {
           <Route path="/client/loans/apply" element={<ClientLoanApplyPage />} />
           <Route path="/client/loans/:id" element={<ClientLoanDetailPage />} />
           <Route path="/client/recipients" element={<ClientRecipientsPage />} />
+          <Route path="/client/securities" element={<ClientSecuritiesPage />} />
+          <Route path="/client/securities/:id" element={<ClientListingDetailPage />} />
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
