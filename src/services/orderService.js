@@ -4,17 +4,16 @@ export const orderService = {
   /**
    * Place a new order.
    */
-  async createOrder({ assetId, quantity, direction, orderType, limitValue, stopValue, isAon, isMargin, accountId }) {
+  async createOrder({ assetId, quantity, direction, limitValue, stopValue, isAon, isMargin, accountId }) {
     const { data } = await apiClient.post('/orders', {
-      asset_id:    assetId,
+      assetId,
       quantity,
       direction,
-      order_type:  orderType,
-      limit_value: limitValue,
-      stop_value:  stopValue,
-      is_aon:      isAon,
-      is_margin:   isMargin,
-      account_id:  accountId,
+      limitValue,
+      stopValue,
+      isAon,
+      isMargin,
+      accountId,
     })
     return data
   },
