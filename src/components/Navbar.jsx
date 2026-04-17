@@ -63,6 +63,9 @@ function Navbar() {
             {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
               <NavLink to="/admin/stock-exchanges" className={linkClass}>Stock Exchanges</NavLink>
             )}
+            {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
+              <NavLink to="/securities" className={linkClass}>Securities</NavLink>
+            )}
             {user?.permissions?.isSupervisor && (
               <NavLink to="/admin/orders" className={linkClass}>Orders</NavLink>
             )}
@@ -145,6 +148,9 @@ function Navbar() {
             )}
             {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
               <NavLink to="/admin/stock-exchanges" className={linkClass} onClick={() => setMenuOpen(false)}>Stock Exchanges</NavLink>
+            )}
+            {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
+              <NavLink to="/securities" className={linkClass} onClick={() => setMenuOpen(false)}>Securities</NavLink>
             )}
             {user?.permissions?.isSupervisor && (
               <NavLink to="/admin/orders" className={linkClass} onClick={() => setMenuOpen(false)}>Orders</NavLink>
