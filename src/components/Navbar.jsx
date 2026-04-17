@@ -63,6 +63,9 @@ function Navbar() {
             {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
               <NavLink to="/admin/stock-exchanges" className={linkClass}>Stock Exchanges</NavLink>
             )}
+            {user?.permissions?.isSupervisor && (
+              <NavLink to="/admin/orders" className={linkClass}>Orders</NavLink>
+            )}
           </div>
 
           {/* Desktop CTA */}
@@ -142,6 +145,9 @@ function Navbar() {
             )}
             {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
               <NavLink to="/admin/stock-exchanges" className={linkClass} onClick={() => setMenuOpen(false)}>Stock Exchanges</NavLink>
+            )}
+            {user?.permissions?.isSupervisor && (
+              <NavLink to="/admin/orders" className={linkClass} onClick={() => setMenuOpen(false)}>Orders</NavLink>
             )}
             <div className="flex items-center gap-4">
               <button

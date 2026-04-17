@@ -48,6 +48,8 @@ import EmployeeLoanApplicationsPage from './pages/employee/EmployeeLoanApplicati
 import EmployeeLoansPage from './pages/employee/EmployeeLoansPage'
 import ActuaryManagementPage from './pages/employee/ActuaryManagementPage'
 import StockExchangesPage from './pages/employee/StockExchangesPage'
+import CreateOrderPage from './pages/orders/CreateOrderPage'
+import OrderReviewPage from './pages/orders/OrderReviewPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
@@ -82,6 +84,8 @@ function App() {
               <Route path="/admin/loans" element={<EmployeeLoansPage />} />
               <Route path="/admin/actuaries" element={<ActuaryManagementPage />} />
               <Route path="/admin/stock-exchanges" element={<StockExchangesPage />} />
+              <Route path="/admin/orders" element={<OrderReviewPage />} />
+              <Route path="/orders/new" element={<CreateOrderPage />} />
             </Route>
           </Route>
 
