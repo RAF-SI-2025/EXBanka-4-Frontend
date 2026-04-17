@@ -24,6 +24,7 @@ src/
 ├── pages/
 │   ├── client/       # client portal pages (/client/*)
 │   ├── employee/     # employee portal pages (/, /admin/*, /login, etc.)
+│   ├── securities/   # securities/listings pages (/securities/*, employee only)
 │   └── NotFoundPage.jsx
 ├── layouts/
 │   ├── ClientPortalLayout.jsx   # sidebar + navbar for logged-in client pages
@@ -32,7 +33,7 @@ src/
 ├── components/       # shared components (Navbar, Footer, ProtectedRoute, PermissionGate, CardBrand, CardDetailModal, Spinner)
 ├── models/           # plain JS classes with *FromApi() mappers (BankAccount, Card, Client, Employee, Payment, Recipient)
 ├── mocks/            # legacy in-memory mock data — not imported anywhere, safe to delete
-├── services/         # API service functions (apiClient, clientApiClient, authService, clientAuthService, clientAccountService, paymentService, recipientService, transferService, cardService, exchangeService, loanService, etc.)
+├── services/         # API service functions (apiClient, clientApiClient, authService, clientAuthService, clientAccountService, paymentService, recipientService, transferService, cardService, exchangeService, loanService, securitiesService, clientSecuritiesService, orderService, etc.)
 ├── hooks/            # custom hooks (useWindowTitle, usePermission)
 └── utils/            # utilities (permissions, formatting)
 ```
@@ -112,6 +113,8 @@ Backend fully integrated — all data is fetched from the live Go backend. Mock 
 | `/client/loans` | ClientLoansPage | |
 | `/client/loans/apply` | ClientLoanApplyPage | |
 | `/client/loans/:id` | ClientLoanDetailPage | |
+| `/client/securities` | ClientSecuritiesPage | listings overview |
+| `/client/securities/:id` | ClientListingDetailPage | listing detail + order placement |
 
 ### Employee portal pages
-Employee list, detail, create — client list, detail, create — account list, detail, create — bank accounts view — loan applications (approve/reject) — loans overview — auth pages (login, forgot password, set/reset password) — dashboard — about.
+Employee list, detail, create — client list, detail, create — account list, detail, create — bank accounts view — loan applications (approve/reject) — loans overview — securities/listings list (`/securities`) — listing detail (`/securities/:id`) — auth pages (login, forgot password, set/reset password) — dashboard — about.

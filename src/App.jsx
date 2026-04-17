@@ -50,6 +50,7 @@ import ActuaryManagementPage from './pages/employee/ActuaryManagementPage'
 import StockExchangesPage from './pages/employee/StockExchangesPage'
 import SecuritiesPage from './pages/securities/SecuritiesPage'
 import ListingDetailPage from './pages/securities/ListingDetailPage'
+import StockOptionsPage from './pages/securities/StockOptionsPage'
 import ClientSecuritiesPage from './pages/client/ClientSecuritiesPage'
 import ClientListingDetailPage from './pages/client/ClientListingDetailPage'
 import NotFoundPage from './pages/NotFoundPage'
@@ -88,6 +89,7 @@ function App() {
               <Route path="/admin/stock-exchanges" element={<StockExchangesPage />} />
               <Route path="/securities" element={<SecuritiesPage />} />
               <Route path="/securities/:id" element={<ListingDetailPage />} />
+              <Route path="/securities/:id/options" element={<StockOptionsPage />} />
             </Route>
           </Route>
 

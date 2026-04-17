@@ -67,4 +67,32 @@ export const securitiesService = {
   async getForex(opts = {}) {
     return this.getListings({ ...opts, type: 'FOREX_PAIR' })
   },
+
+  /**
+   * Fetch all option contracts for an underlying stock.
+   * Returns { stock, options } where stock is the underlying Listing
+   * and options is a flat array of option Listings (with optionType,
+   * strikePrice, settlementDate, openInterest populated).
+   */
+  async getStockOptions(stockId) {
+    const { listing: stock } = await this.getListing(stockId)
+    const underlyingTicker = stock.ticker
+
+    // Options have tickers like AAPL260417C00011000 — prefix match on underlying ticker
+    const all = []
+    let page = 0
+    while (true) {
+      const result = await this.getListings({
+        type: 'OPTION',
+        ticker: underlyingTicker,
+        page,
+        pageSize: 200,
+      })
+      all.push(...result.items)
+      if (page + 1 >= result.totalPages) break
+      page++
+    }
+
+    return { stock, options: all }
+  },
 }

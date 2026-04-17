@@ -21,6 +21,10 @@ export class Listing {
     forexDetail,
     futuresDetail,
     optionDetail,
+    optionType,
+    strikePrice,
+    settlementDate,
+    openInterest,
   }) {
     this.id                 = id
     this.ticker             = ticker             ?? ''
@@ -38,6 +42,11 @@ export class Listing {
     this.forexDetail        = forexDetail        ?? null
     this.futuresDetail      = futuresDetail      ?? null
     this.optionDetail       = optionDetail       ?? null
+    // Option-specific (populated when type === 'OPTION')
+    this.optionType         = optionType         ?? ''
+    this.strikePrice        = strikePrice        ?? 0
+    this.settlementDate     = settlementDate     ?? ''
+    this.openInterest       = openInterest       ?? 0
   }
 }
 
@@ -62,5 +71,9 @@ export function listingFromApi(data) {
     forexDetail:       data.forex_detail        ?? data.forexDetail        ?? null,
     futuresDetail:     data.futures_detail      ?? data.futuresDetail      ?? null,
     optionDetail:      data.option_detail       ?? data.optionDetail       ?? null,
+    optionType:        data.optionType          ?? data.option_type        ?? '',
+    strikePrice:       data.strikePrice         ?? data.strike_price       ?? 0,
+    settlementDate:    data.settlementDate      ?? data.settlement_date    ?? '',
+    openInterest:      data.openInterest        ?? data.open_interest      ?? 0,
   })
 }
