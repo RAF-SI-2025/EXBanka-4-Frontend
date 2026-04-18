@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 jobs:
-  cypress-celina1:
+  cypress-celina1: #neka izmena
     name: Celina 1
     runs-on: ubuntu-latest
     steps:
