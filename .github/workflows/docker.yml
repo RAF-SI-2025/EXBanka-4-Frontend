@@ -2,8 +2,8 @@ name: Frontend Docker image
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
     paths:
       - '**'
       - '!.github/workflows/cypress.yml'
