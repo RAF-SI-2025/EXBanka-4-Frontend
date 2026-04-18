@@ -15,16 +15,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: RAF-SI-2025/EXBanka-4-Backend
-          path: ../EXBanka-4-Backend
+          path: EXBanka-4-Backend
 
       - uses: actions/checkout@v4
         with:
           repository: RAF-SI-2025/EXBanka-4-Infrastructure
-          path: ../EXBanka-4-Infrastructure
+          path: EXBanka-4-Infrastructure
 
       - name: Create .env
         run: |
-          cat > ../EXBanka-4-Infrastructure/.env <<EOF
+          cat > EXBanka-4-Infrastructure/.env <<EOF
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           SMTP_HOST=localhost
           SMTP_PORT=587
@@ -38,7 +38,7 @@ jobs:
 
       - name: Start backend
         run: docker compose up -d --build
-        working-directory: ../EXBanka-4-Infrastructure
+        working-directory: EXBanka-4-Infrastructure
 
       - name: Wait for API gateway
         run: |
@@ -79,16 +79,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: RAF-SI-2025/EXBanka-4-Backend
-          path: ../EXBanka-4-Backend
+          path: EXBanka-4-Backend
 
       - uses: actions/checkout@v4
         with:
           repository: RAF-SI-2025/EXBanka-4-Infrastructure
-          path: ../EXBanka-4-Infrastructure
+          path: EXBanka-4-Infrastructure
 
       - name: Create .env
         run: |
-          cat > ../EXBanka-4-Infrastructure/.env <<EOF
+          cat > EXBanka-4-Infrastructure/.env <<EOF
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           SMTP_HOST=localhost
           SMTP_PORT=587
@@ -102,7 +102,7 @@ jobs:
 
       - name: Start backend
         run: docker compose up -d --build
-        working-directory: ../EXBanka-4-Infrastructure
+        working-directory: EXBanka-4-Infrastructure
 
       - name: Wait for API gateway
         run: |
