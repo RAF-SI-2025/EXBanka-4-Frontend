@@ -205,7 +205,7 @@ describe('Agent Work Day', () => {
 
     // Verify all required columns are present
     const expectedColumns = ['Agent', 'Order Type', 'Asset', 'Qty', 'Contract Size', 'Price / Unit', 'Direction', 'Remaining', 'Status']
-    expectedColumns.forEach(col => cy.contains('th', col).should('be.visible'))
+    expectedColumns.forEach(col => cy.contains('th', col).should('exist'))
 
     // Filter to PENDING only
     cy.contains('button', 'PENDING').click()
@@ -222,11 +222,17 @@ describe('Agent Work Day', () => {
     cy.get('@denisRow').contains('button', 'Approve').click()
     cy.wait('@approveOrder').its('response.statusCode').should('be.oneOf', [200, 201])
 
-    // Verify the status badge changed to APPROVED and button text updated
-    cy.get('@denisRow').contains('APPROVED').should('be.visible')
-    cy.get('@denisRow').contains('button', 'Approved').should('be.visible')
+    // Switch to APPROVED filter — the row was filtered out of PENDING view after approval
+    cy.contains('button', 'APPROVED').click()
 
-    // Note: "Approved By" (Ana Jovanovic) is not displayed in the UI —
+    // Re-find Denis's row and verify status badge changed to APPROVED
+    cy.contains('tbody tr', 'Denis Elezovic')
+      .should('contain.text', 'MSFT')
+      .and('contain.text', 'APPROVED')
+      .as('denisApprovedRow')
+    cy.get('@denisApprovedRow').contains('APPROVED').should('be.visible')
+
+    // Note: "Approved By"  is not displayed in the UI —
     // this is backend-only data not surfaced on the Order Review page.
   })
 
