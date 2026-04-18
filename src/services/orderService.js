@@ -1,4 +1,5 @@
 import { apiClient } from './apiClient'
+import { clientApiClient } from './clientApiClient'
 
 export const orderService = {
   /**
@@ -14,6 +15,13 @@ export const orderService = {
       isAon,
       isMargin,
       accountId,
+    })
+    return data
+  },
+
+  async createClientOrder({ assetId, quantity, direction, limitValue, stopValue, isAon, isMargin, accountId }) {
+    const { data } = await clientApiClient.post('/client/orders', {
+      assetId, quantity, direction, limitValue, stopValue, isAon, isMargin, accountId,
     })
     return data
   },

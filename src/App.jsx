@@ -57,6 +57,7 @@ import StockOptionsPage from './pages/securities/StockOptionsPage'
 import ClientSecuritiesPage from './pages/client/ClientSecuritiesPage'
 import ClientListingDetailPage from './pages/client/ClientListingDetailPage'
 import ClientPortfolioPage from './pages/client/ClientPortfolioPage'
+import ClientCreateOrderPage from './pages/client/ClientCreateOrderPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
@@ -128,6 +129,7 @@ function App() {
           <Route path="/client/recipients" element={<ClientRecipientsPage />} />
           <Route path="/client/securities" element={<ClientSecuritiesPage />} />
           <Route path="/client/securities/:id" element={<ClientListingDetailPage />} />
+          <Route path="/client/orders/new" element={<ClientCreateOrderPage />} />
           <Route path="/client/portfolio" element={<ClientPortfolioPage />} />
 
           <Route path="*" element={<NotFoundPage />} />

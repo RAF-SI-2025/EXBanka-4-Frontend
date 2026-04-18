@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   ResponsiveContainer, LineChart, Line,
   XAxis, YAxis, Tooltip, CartesianGrid,
@@ -29,6 +29,7 @@ function InfoRow({ label, children }) {
 
 export default function ClientListingDetailPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [listing, setListing]               = useState(null)
   const [detail, setDetail]                 = useState(null)
   const [history, setHistory]               = useState([])
@@ -107,9 +108,17 @@ export default function ClientListingDetailPage() {
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{listing.name}</p>
           </div>
-          <Link to="/client/securities" className="text-sm text-violet-600 dark:text-violet-400 hover:underline mt-1">
-            ← Back
-          </Link>
+          <div className="flex items-center gap-4 mt-1">
+            <button
+              onClick={() => navigate(`/client/orders/new?ticker=${listing.ticker}&direction=BUY`)}
+              className="btn-primary"
+            >
+              Buy
+            </button>
+            <Link to="/client/securities" className="text-sm text-violet-600 dark:text-violet-400 hover:underline">
+              ← Back
+            </Link>
+          </div>
         </div>
 
         {/* Price chart */}

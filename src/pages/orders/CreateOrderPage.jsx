@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, Navigate } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { usePermission } from '../../hooks/usePermission'
 import { securitiesService } from '../../services/securitiesService'
+import { stockExchangeService } from '../../services/stockExchangeService'
 import { orderService } from '../../services/orderService'
 import { apiClient } from '../../services/apiClient'
 import { fmt } from '../../utils/formatting'
@@ -52,6 +53,8 @@ export default function CreateOrderPage() {
   const [isMargin,   setIsMargin]   = useState(false)
   const [accountId,  setAccountId]  = useState('')
 
+  const [exchangeStatus, setExchangeStatus] = useState(null)
+
   // UI state
   const [showConfirm, setShowConfirm] = useState(false)
   const [submitting,  setSubmitting]  = useState(false)
@@ -61,9 +64,10 @@ export default function CreateOrderPage() {
     if (!ticker) { setLoadingInit(false); return }
 
     async function init() {
+      let found = null
       try {
         const { items } = await securitiesService.getListings({ ticker })
-        const found = items.find((l) => l.ticker === ticker) ?? items[0] ?? null
+        found = items.find((l) => l.ticker === ticker) ?? items[0] ?? null
         setListing(found)
       } catch {
         setInitError(true)
@@ -72,14 +76,23 @@ export default function CreateOrderPage() {
       }
 
       try {
-        const fetchAccounts = apiClient.get('/api/bank-accounts').then((r) => r.data)
-        const accs = await fetchAccounts
+        const accs = await apiClient.get('/api/bank-accounts').then((r) => r.data)
         setAccounts(Array.isArray(accs) ? accs : [])
         if (accs.length > 0) setAccountId(String(accs[0].id ?? accs[0].accountId))
       } catch {
         // accounts failed — page still loads, user just won't have a pre-selected account
       } finally {
         setLoadingInit(false)
+      }
+
+      if (found?.exchangeAcronym) {
+        try {
+          const { exchanges } = await stockExchangeService.getAll(1, 200)
+          const exch = exchanges.find((e) => e.acronym === found.exchangeAcronym)
+          if (exch) setExchangeStatus(await stockExchangeService.getStatus(exch.micCode))
+        } catch {
+          // non-critical — banner just won't show
+        }
       }
     }
     init()
@@ -170,6 +183,21 @@ export default function CreateOrderPage() {
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 font-light mb-3">{listing.name}</p>
         <div className="w-10 h-px bg-violet-500 dark:bg-violet-400 mb-10" />
+
+        {exchangeStatus && exchangeStatus !== 'regular' && exchangeStatus !== 'test_mode' && (() => {
+          const banners = {
+            closed:      { cls: 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-300', msg: 'Market is currently closed — your order will be queued and executed when it reopens.' },
+            pre_market:  { cls: 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-900/20 dark:border-blue-700 dark:text-blue-300',   msg: 'Pre-market hours — your order will be queued and executed at market open.' },
+            post_market: { cls: 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-900/20 dark:border-amber-700 dark:text-amber-300', msg: 'Post-market hours — your order will be queued for the next trading session.' },
+          }
+          const b = banners[exchangeStatus]
+          if (!b) return null
+          return (
+            <div className={`border rounded-lg px-4 py-3 text-sm mb-6 ${b.cls}`}>
+              {b.msg}
+            </div>
+          )
+        })()}
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm space-y-5">
 
