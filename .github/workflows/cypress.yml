@@ -61,8 +61,8 @@ jobs:
         timeout-minutes: 30
         uses: cypress-io/github-action@783cb3f07983868532cabaedaa1e6c00ff4786a8
         with:
-          start: npm run preview
-          wait-on: http://localhost:4173/
+          start: npm run dev
+          wait-on: http://localhost:5173/
           wait-on-timeout: 120
           browser: chrome
           spec: cypress/e2e/celina1/**
@@ -128,8 +128,8 @@ jobs:
         timeout-minutes: 30
         uses: cypress-io/github-action@783cb3f07983868532cabaedaa1e6c00ff4786a8
         with:
-          start: npm run preview
-          wait-on: http://localhost:4173/
+          start: npm run dev
+          wait-on: http://localhost:5173/
           wait-on-timeout: 120
           browser: chrome
           spec: cypress/e2e/celina2/**
