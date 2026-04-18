@@ -15,35 +15,28 @@ jobs:
       - name: Check out ${{ github.ref }} after a ${{ github.event_name }} event
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-      - name: Login to GitHub Container Registry
-        if: github.event_name == 'push'
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
       - name: Checkout Backend repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: RAF-SI-2025/EXBanka-4-Backend
-          path: EXBanka-4-Frontend/EXBanka-4-Backend
+          path: EXBanka-4-Backend
 
       - name: Checkout Infrastructure repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: RAF-SI-2025/EXBanka-4-Infrastructure
-          path: infrastructure
+          path: EXBanka-4-Infrastructure
 
       - name: Create .env from secrets
         env:
           SECRETS_CONTEXT: ${{ toJson(secrets) }}
         run: |
-          echo $SECRETS_CONTEXT | jq -r "to_entries|map(\"\(.key)=\\\"\(.value|tostring)\\\"\")|.[]" >> infrastructure/.env
+          echo $SECRETS_CONTEXT | jq -r "to_entries|map(\"\(.key)=\\\"\(.value|tostring)\\\"\")|.[]" >> EXBanka-4-Infrastructure/.env
 
       - name: Start backend
-        run: docker compose up -d
-        working-directory: ${{ github.workspace }}/infrastructure
+        # skip the 'frontend' nginx service — Cypress starts the dev server itself
+        run: docker compose up -d --scale frontend=0
+        working-directory: ${{ github.workspace }}/EXBanka-4-Infrastructure
 
       - name: Wait for services to start up and check health
         run: |
@@ -56,7 +49,7 @@ jobs:
             echo "One or more backend services are unhealthy. Check the logs for details."
             exit 1
           fi
-        working-directory: ${{ github.workspace }}/infrastructure
+        working-directory: ${{ github.workspace }}/EXBanka-4-Infrastructure
 
       - name: Copy frontend environment variables
         run: cp .github/workflows/cypress.env.test.json cypress.env.json
@@ -86,35 +79,28 @@ jobs:
       - name: Check out ${{ github.ref }} after a ${{ github.event_name }} event
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-      - name: Login to GitHub Container Registry
-        if: github.event_name == 'push'
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Checkout Backend repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: RAF-SI-2025/EXBanka-4-Backend
-          path: EXBanka-4-Frontend/EXBanka-4-Backend
+          path: EXBanka-4-Backend
 
       - name: Checkout Infrastructure repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           repository: RAF-SI-2025/EXBanka-4-Infrastructure
-          path: infrastructure
+          path: EXBanka-4-Infrastructure
 
       - name: Create .env from secrets
         env:
           SECRETS_CONTEXT: ${{ toJson(secrets) }}
         run: |
-          echo $SECRETS_CONTEXT | jq -r "to_entries|map(\"\(.key)=\\\"\(.value|tostring)\\\"\")|.[]" >> infrastructure/.env
+          echo $SECRETS_CONTEXT | jq -r "to_entries|map(\"\(.key)=\\\"\(.value|tostring)\\\"\")|.[]" >> EXBanka-4-Infrastructure/.env
 
       - name: Start backend
-        run: docker compose up -d
-        working-directory: ${{ github.workspace }}/infrastructure
+        # skip the 'frontend' nginx service — Cypress starts the dev server itself
+        run: docker compose up -d --scale frontend=0
+        working-directory: ${{ github.workspace }}/EXBanka-4-Infrastructure
 
       - name: Wait for services to start up and check health
         run: |
@@ -127,7 +113,7 @@ jobs:
             echo "One or more backend services are unhealthy. Check the logs for details."
             exit 1
           fi
-        working-directory: ${{ github.workspace }}/infrastructure
+        working-directory: ${{ github.workspace }}/EXBanka-4-Infrastructure
 
       - name: Copy frontend environment variables
         run: cp .github/workflows/cypress.env.test.json cypress.env.json
@@ -139,6 +125,7 @@ jobs:
           start: npm run preview
           wait-on: http://localhost:4173/
           wait-on-timeout: 120
+          browser: chrome
           spec: cypress/e2e/celina2/**
         env:
           VITE_API_URL: http://localhost:8083
