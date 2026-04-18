@@ -2,12 +2,12 @@ import { clientApiClient } from './clientApiClient'
 
 export const clientPortfolioService = {
   async getPortfolio() {
-    const { data } = await clientApiClient.get('/portfolio')
+    const { data } = await clientApiClient.get('/client/portfolio')
     return data
   },
 
   async getProfit() {
-    const { data } = await clientApiClient.get('/portfolio/profit')
+    const { data } = await clientApiClient.get('/client/portfolio/profit')
     return data
   },
 }

@@ -17,7 +17,10 @@ export default function StockExchangesPage() {
   const [error, setError] = useState(null)
   const [testMode, setTestMode] = useState(false)
   const [togglingTestMode, setTogglingTestMode] = useState(false)
+  const [statuses, setStatuses] = useState({})
+  const [statusRefreshKey, setStatusRefreshKey] = useState(0)
 
+  // Fetch exchanges + test mode when page changes.
   useEffect(() => {
     async function load() {
       setLoading(true)
@@ -39,13 +42,51 @@ export default function StockExchangesPage() {
     load()
   }, [isAdmin, page])
 
+  // Fetch statuses whenever the exchange list changes or test mode is toggled.
+  useEffect(() => {
+    if (exchanges.length === 0) return
+    const current = exchanges
+    async function fetchStatuses() {
+      const statusEntries = await Promise.all(
+        current.map(async (ex) => {
+          try {
+            const seg = await stockExchangeService.getStatus(ex.micCode)
+            return [ex.micCode, seg]
+          } catch {
+            return [ex.micCode, 'closed']
+          }
+        })
+      )
+      setStatuses(Object.fromEntries(statusEntries))
+    }
+    fetchStatuses()
+  }, [exchanges, statusRefreshKey])
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
+
+  function statusBadge(mic) {
+    const seg = statuses[mic]
+    const map = {
+      regular:      { label: 'Working Hours', cls: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400' },
+      pre_market:   { label: 'Pre-Market',    cls: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+      post_market:  { label: 'Post-Market',   cls: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+      test_mode:    { label: 'Test Mode',     cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+      closed:       { label: 'Closed',        cls: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
+    }
+    const { label, cls } = map[seg] ?? map.closed
+    return (
+      <span className={`inline-flex items-center justify-center min-w-[6rem] px-2.5 py-0.5 text-xs font-medium tracking-wide rounded-full ${cls}`}>
+        {label}
+      </span>
+    )
+  }
 
   async function handleToggleTestMode() {
     setTogglingTestMode(true)
     try {
       const next = await stockExchangeService.setTestMode(!testMode)
       setTestMode(next)
+      setStatusRefreshKey(k => k + 1)
     } finally {
       setTogglingTestMode(false)
     }
@@ -137,13 +178,7 @@ export default function StockExchangesPage() {
                       <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{ex.currency}</td>
                       <td className="px-6 py-4 text-slate-700 dark:text-slate-300">{ex.timezone}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center justify-center min-w-[6rem] px-2.5 py-0.5 text-xs font-medium tracking-wide rounded-full ${
-                          testMode
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                            : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
-                        }`}>
-                          {testMode ? 'Test Mode' : 'Normal'}
-                        </span>
+                        {statusBadge(ex.micCode)}
                       </td>
                     </tr>
                   ))

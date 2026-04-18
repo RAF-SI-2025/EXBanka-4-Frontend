@@ -13,4 +13,8 @@ export const stockExchangeService = {
     const { data } = await apiClient.post('/stock-exchanges/test-mode', { enabled })
     return data.enabled
   },
+  async getStatus(mic) {
+    const { data } = await apiClient.get(`/stock-exchanges/${mic}/is-open`)
+    return data.segment ?? 'closed'
+  },
 }
