@@ -1,0 +1,135 @@
+name: Cypress E2E Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  cypress-celina1:
+    name: Celina 1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: RAF-SI-2025/EXBanka-4-Backend
+          path: ../EXBanka-4-Backend
+
+      - uses: actions/checkout@v4
+        with:
+          repository: RAF-SI-2025/EXBanka-4-Infrastructure
+          path: ../EXBanka-4-Infrastructure
+
+      - name: Create .env
+        run: |
+          cat > ../EXBanka-4-Infrastructure/.env <<EOF
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          SMTP_HOST=localhost
+          SMTP_PORT=587
+          SMTP_USER=ci@example.com
+          SMTP_PASSWORD=ci_password
+          FROM_EMAIL=ci@example.com
+          ALPACA_API_KEY=${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET_KEY=${{ secrets.ALPACA_API_SECRET_KEY }}
+          ALPHAVANTAGE_API_KEY=${{ secrets.ALPHAVANTAGE_API_KEY }}
+          EOF
+
+      - name: Start backend
+        run: docker compose up -d --build
+        working-directory: ../EXBanka-4-Infrastructure
+
+      - name: Wait for API gateway
+        run: |
+          echo "Waiting for API gateway on port 8083..."
+          timeout 600 bash -c 'until nc -z localhost 8083; do sleep 10; done'
+          echo "API gateway ready"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Start frontend dev server
+        run: npm run dev &
+        env:
+          VITE_API_URL: http://localhost:8083
+
+      - name: Wait for frontend
+        run: npx --yes wait-on http://localhost:5173 --timeout 60000
+
+      - name: Run Cypress - celina1
+        run: npx cypress run --spec 'cypress/e2e/celina1/**'
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-celina1
+          path: cypress/screenshots
+
+  cypress-celina2:
+    name: Celina 2
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/checkout@v4
+        with:
+          repository: RAF-SI-2025/EXBanka-4-Backend
+          path: ../EXBanka-4-Backend
+
+      - uses: actions/checkout@v4
+        with:
+          repository: RAF-SI-2025/EXBanka-4-Infrastructure
+          path: ../EXBanka-4-Infrastructure
+
+      - name: Create .env
+        run: |
+          cat > ../EXBanka-4-Infrastructure/.env <<EOF
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          SMTP_HOST=localhost
+          SMTP_PORT=587
+          SMTP_USER=ci@example.com
+          SMTP_PASSWORD=ci_password
+          FROM_EMAIL=ci@example.com
+          ALPACA_API_KEY=${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET_KEY=${{ secrets.ALPACA_API_SECRET_KEY }}
+          ALPHAVANTAGE_API_KEY=${{ secrets.ALPHAVANTAGE_API_KEY }}
+          EOF
+
+      - name: Start backend
+        run: docker compose up -d --build
+        working-directory: ../EXBanka-4-Infrastructure
+
+      - name: Wait for API gateway
+        run: |
+          echo "Waiting for API gateway on port 8083..."
+          timeout 600 bash -c 'until nc -z localhost 8083; do sleep 10; done'
+          echo "API gateway ready"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Start frontend dev server
+        run: npm run dev &
+        env:
+          VITE_API_URL: http://localhost:8083
+
+      - name: Wait for frontend
+        run: npx --yes wait-on http://localhost:5173 --timeout 60000
+
+      - name: Run Cypress - celina2
+        run: npx cypress run --spec 'cypress/e2e/celina2/**'
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-celina2
+          path: cypress/screenshots

@@ -55,8 +55,8 @@ describe('Portal za upravljanje klijentima — zaposleni', () => {
     cy.contains('button', 'Edit').click()
 
     // Editing mode is now active — phone and address fields are visible
-    cy.get('input[name="phoneNumber"]').should('be.visible')
-    cy.get('input[name="address"]').should('be.visible')
+    cy.get('input[name="phoneNumber"]').scrollIntoView().should('be.visible')
+    cy.get('input[name="address"]').scrollIntoView().should('be.visible')
 
     // And: izmeni broj telefona i adresu
     const newPhone   = '+381601234567'
@@ -69,10 +69,10 @@ describe('Portal za upravljanje klijentima — zaposleni', () => {
     cy.contains('button', 'Save').click()
 
     // Then: sistem čuva nove podatke — edit mode exits and values are displayed
-    cy.contains('button', 'Edit').should('be.visible')   // back to view mode
+    cy.contains('button', 'Edit').scrollIntoView().should('be.visible')   // back to view mode
     cy.contains('button', 'Save').should('not.exist')    // save button gone
 
-    cy.contains(newPhone).should('be.visible')
-    cy.contains(newAddress).should('be.visible')
+    cy.contains(newPhone).scrollIntoView().should('be.visible')
+    cy.contains(newAddress).scrollIntoView().should('be.visible')
   })
 })

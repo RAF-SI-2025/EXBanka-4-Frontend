@@ -104,8 +104,8 @@ describe('Upravljanje zaposlenima — scenarios 11–15', () => {
 
         // Then: podaci su ažurirani (edit mode closed, new values displayed)
         cy.contains('button', 'Save').should('not.exist')
-        cy.contains(newPhone).should('be.visible')
-        cy.contains(newDept).should('be.visible')
+        cy.contains(newPhone).scrollIntoView().should('be.visible')
+        cy.contains(newDept).scrollIntoView().should('be.visible')
       })
     })
   })
@@ -142,7 +142,7 @@ describe('Upravljanje zaposlenima — scenarios 11–15', () => {
 
         // Then: status je postavljen na neaktivan
         cy.contains('button', 'Save').should('not.exist')
-        cy.contains('Inactive').should('be.visible')
+        cy.contains('Inactive').scrollIntoView().should('be.visible')
 
         // And: zaposleni više ne može da se prijavi
         cy.visit('/login')

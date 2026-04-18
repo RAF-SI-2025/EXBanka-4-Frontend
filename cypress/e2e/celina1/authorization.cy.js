@@ -75,8 +75,8 @@ describe('Autorizacija i permisije — scenarios 16–18', () => {
         cy.get('tbody tr').contains('td', 'petar.petrovic@banka.rs').click()
 
         // Given: admin je na stranici za upravljanje permisijama zaposlenog
-        cy.contains('Petar').should('be.visible')
-        cy.contains('button', 'Edit').click()
+        cy.contains('Petar').scrollIntoView().should('be.visible')
+        cy.contains('button', 'Edit').scrollIntoView().click()
 
         // When: dodeli rolu "Clerk" (koja daje View Clients / READ permisiju)
         cy.contains('label', 'Clerk')
@@ -87,7 +87,7 @@ describe('Autorizacija i permisije — scenarios 16–18', () => {
 
         // Then: sistem ažurira listu permisija
         cy.contains('button', 'Save').should('not.exist')
-        cy.contains('Clerk').should('be.visible')
+        cy.contains('Clerk').scrollIntoView().should('be.visible')
 
         // And: permisija je sačuvana u bazi (verifikacija via API)
         cy.request({
