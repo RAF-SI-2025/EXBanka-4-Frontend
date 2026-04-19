@@ -1,7 +1,7 @@
 name: Cypress E2E Tests
 run-name: End-to-end for ${{ github.repository }}
 
-on:
+on:  #neka izmena
   workflow_dispatch:
   pull_request:
   push:
@@ -140,4 +140,71 @@ jobs:
         if: failure()
         with:
           name: cypress-screenshots-celina2
+          path: cypress/screenshots
+
+  cypress-celina3:
+    name: Celina 3
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out ${{ github.ref }} after a ${{ github.event_name }} event
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Checkout Backend repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: RAF-SI-2025/EXBanka-4-Backend
+          ref: ${{ github.head_ref || github.ref_name }}
+          path: EXBanka-4-Backend
+
+      - name: Checkout Infrastructure repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: RAF-SI-2025/EXBanka-4-Infrastructure
+          ref: ${{ github.head_ref || github.ref_name }}
+          path: EXBanka-4-Infrastructure
+
+      - name: Create .env from secrets
+        env:
+          SECRETS_CONTEXT: ${{ toJson(secrets) }}
+        run: |
+          echo $SECRETS_CONTEXT | jq -r "to_entries|map(\"\(.key)=\\\"\(.value|tostring)\\\"\")|.[]" >> EXBanka-4-Infrastructure/.env
+
+      - name: Start backend
+        # exclude the 'frontend' nginx service — its build context (../EXBanka-4-Frontend) doesn't
+        # exist in CI; Cypress starts the dev server itself via 'npm run preview'
+        run: docker compose up -d $(docker compose config --services | grep -v '^frontend$')
+        working-directory: ${{ github.workspace }}/EXBanka-4-Infrastructure
+
+      - name: Wait for services to start up and check health
+        run: |
+          while docker compose ps | grep "starting"
+          do
+            sleep 5
+          done
+          if docker compose ps | grep "unhealthy"
+          then
+            echo "One or more backend services are unhealthy. Check the logs for details."
+            exit 1
+          fi
+        working-directory: ${{ github.workspace }}/EXBanka-4-Infrastructure
+
+      - name: Copy frontend environment variables
+        run: cp .github/workflows/cypress.env.test.json cypress.env.json
+
+      - name: Run Cypress - celina3
+        timeout-minutes: 30
+        uses: cypress-io/github-action@783cb3f07983868532cabaedaa1e6c00ff4786a8
+        with:
+          start: npm run dev
+          wait-on: http://localhost:5173/
+          wait-on-timeout: 120
+          browser: chrome
+          spec: cypress/e2e/celina3/**
+        env:
+          VITE_API_URL: http://localhost:8083
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-celina3
           path: cypress/screenshots
