@@ -5,7 +5,9 @@ import { usePermission } from '../../hooks/usePermission'
 import { orderService } from '../../services/orderService'
 import { fmt } from '../../utils/formatting'
 
-const STATUS_FILTERS = ['ALL', 'PENDING', 'APPROVED', 'DECLINED', 'DONE']
+const STATUS_FILTERS   = ['ALL', 'PENDING', 'APPROVED', 'DECLINED', 'DONE']
+const DIRECTION_OPTIONS = ['', 'BUY', 'SELL']
+const ORDER_TYPE_OPTIONS = ['', 'MARKET', 'LIMIT', 'STOP', 'STOP_LIMIT']
 
 const STATUS_BADGE = {
   PENDING:  'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -48,7 +50,10 @@ export default function OrderReviewPage() {
 
   const [orders,       setOrders]       = useState([])
   const [loading,      setLoading]      = useState(true)
-  const [statusFilter, setStatusFilter] = useState('ALL')
+  const [statusFilter,    setStatusFilter]    = useState('ALL')
+  const [directionFilter, setDirectionFilter] = useState('')
+  const [typeFilter,      setTypeFilter]      = useState('')
+  const [tickerFilter,    setTickerFilter]    = useState('')
   // tracks one-time approve/decline per order: { [id]: 'approved' | 'declined' }
   const [actioned,     setActioned]     = useState({})
   const [busy,         setBusy]         = useState({})
@@ -64,10 +69,21 @@ export default function OrderReviewPage() {
   useEffect(() => { load() }, [])
 
   const displayed = orders.filter((o) => {
-    if (statusFilter === 'ALL')  return true
-    if (statusFilter === 'DONE') return o.is_done ?? o.isDone
-    return o.status === statusFilter
+    const statusMatch = statusFilter === 'ALL'
+      || (statusFilter === 'DONE' ? (o.is_done ?? o.isDone) : o.status === statusFilter)
+    const directionMatch = !directionFilter || o.direction === directionFilter
+    const typeMatch = !typeFilter || (o.order_type ?? o.orderType) === typeFilter
+    const ticker = (o.asset_ticker ?? o.ticker ?? o.asset_id ?? o.assetId ?? '').toString().toLowerCase()
+    const tickerMatch = !tickerFilter.trim() || ticker.includes(tickerFilter.trim().toLowerCase())
+    return statusMatch && directionMatch && typeMatch && tickerMatch
   })
+
+  const hasExtraFilters = directionFilter || typeFilter || tickerFilter.trim()
+  function clearFilters() {
+    setDirectionFilter('')
+    setTypeFilter('')
+    setTickerFilter('')
+  }
 
   async function handle(id, action) {
     setBusy((p) => ({ ...p, [id]: true }))
@@ -98,7 +114,7 @@ export default function OrderReviewPage() {
         <div className="w-10 h-px bg-violet-500 dark:bg-violet-400 mb-10" />
 
         {/* Status filter pills */}
-        <div className="flex gap-2 mb-6 flex-wrap">
+        <div className="flex gap-2 mb-4 flex-wrap">
           {STATUS_FILTERS.map((f) => (
             <button
               key={f}
@@ -112,6 +128,57 @@ export default function OrderReviewPage() {
               {f}
             </button>
           ))}
+        </div>
+
+        {/* Extra filters */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5 mb-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400">Filters</p>
+            {hasExtraFilters && (
+              <button
+                onClick={clearFilters}
+                className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 hover:text-violet-500 transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Direction</label>
+              <select
+                value={directionFilter}
+                onChange={(e) => setDirectionFilter(e.target.value)}
+                className="input-field w-full"
+              >
+                {DIRECTION_OPTIONS.map((d) => (
+                  <option key={d} value={d}>{d || 'All'}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Order Type</label>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="input-field w-full"
+              >
+                {ORDER_TYPE_OPTIONS.map((t) => (
+                  <option key={t} value={t}>{t ? ORDER_TYPE_LABELS[t] ?? t : 'All'}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Asset</label>
+              <input
+                type="text"
+                value={tickerFilter}
+                onChange={(e) => setTickerFilter(e.target.value)}
+                placeholder="Search ticker…"
+                className="input-field w-full"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Table */}
