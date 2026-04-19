@@ -100,7 +100,7 @@ export default function PortfolioPage() {
                         i % 2 === 0 ? '' : 'bg-slate-50/50 dark:bg-slate-800/20'
                       }`}
                     >
-                      <td className="px-4 py-3"><TypeBadge type={h.assetType} /></td>
+                      <td className="px-4 py-3"><TypeBadge type={h.asset_type} /></td>
                       <td className="px-4 py-3 font-mono font-medium text-slate-900 dark:text-white">{h.ticker || h.listingId}</td>
                       <td className="px-4 py-3 text-slate-700 dark:text-slate-300 tabular-nums">{h.amount}</td>
                       <td className="px-4 py-3 text-slate-700 dark:text-slate-300 tabular-nums">{fmt(h.price ?? 0)}</td>
@@ -111,9 +111,9 @@ export default function PortfolioPage() {
                       }`}>
                         {(h.profit ?? 0) >= 0 ? '+' : ''}{fmt(h.profit ?? 0)}
                       </td>
-                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">{h.lastModified}</td>
+                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">{h.last_modified}</td>
                       <td className="px-4 py-3 text-slate-500 dark:text-slate-400 tabular-nums">
-                        {h.assetType === 'STOCK' ? h.publicAmount : '—'}
+                        {h.asset_type === 'STOCK' ? (h.public_amount ?? 0) : '—'}
                       </td>
                       <td className="px-4 py-3">
                         <button
