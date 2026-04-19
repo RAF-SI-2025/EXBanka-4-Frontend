@@ -156,16 +156,65 @@ describe('Margin, Portfolio, Porez, Berze — S64, S66, S68, S70, S72, S74, S76,
 
   // ── Scenario 68 ──────────────────────────────────────────────────────────────
 
-  it.skip('Scenario 68: Portfolio prikazuje ukupan profit', () => {
-    // Skip: No /portfolio route found in the frontend router (App.jsx).
-    // Portfolio UI does not exist — cannot test this scenario via UI.
+  it('Scenario 68: Portfolio prikazuje ukupan profit', () => {
+    cy.intercept({ method: 'GET', pathname: '/portfolio' }, (req) => {
+      if (req.headers.accept?.includes('text/html')) {
+        req.continue()
+      } else {
+        req.reply({
+          statusCode: 200,
+          body: {
+            portfolio: [{
+              id: 1, ticker: 'AAPL', assetType: 'STOCK',
+              amount: 10, price: 150.00, profit: 25.50,
+              lastModified: '2024-01-01T00:00:00Z',
+              isPublic: true, publicAmount: 5, listingId: 1,
+            }],
+          },
+        })
+      }
+    })
+
+    loginAs(ADMIN_EMAIL, ADMIN_PASS)
+    cy.visit('/portfolio')
+    cy.url().should('not.include', '/login')
+    cy.get('table', { timeout: 10000 }).should('exist')
+    cy.get('table thead').within(() => {
+      cy.contains('Profit').should('exist')
+    })
   })
 
   // ── Scenario 70 ──────────────────────────────────────────────────────────────
 
-  it.skip('Scenario 70: Za akcije postoji opcija javnog režima', () => {
-    // Skip: No /portfolio route found in the frontend router (App.jsx).
-    // Portfolio UI does not exist — cannot test public mode toggle via UI.
+  it('Scenario 70: Za akcije postoji opcija javnog režima', () => {
+    cy.intercept({ method: 'GET', pathname: '/portfolio' }, (req) => {
+      if (req.headers.accept?.includes('text/html')) {
+        req.continue()
+      } else {
+        req.reply({
+          statusCode: 200,
+          body: {
+            portfolio: [{
+              id: 1, ticker: 'AAPL', assetType: 'STOCK',
+              amount: 10, price: 150.00, profit: 25.50,
+              lastModified: '2024-01-01T00:00:00Z',
+              isPublic: true, publicAmount: 5, listingId: 1,
+            }],
+          },
+        })
+      }
+    })
+
+    loginAs(ADMIN_EMAIL, ADMIN_PASS)
+    cy.visit('/portfolio')
+    cy.url().should('not.include', '/login')
+    cy.contains('Public Securities', { timeout: 10000 }).should('exist')
+    cy.get('table', { timeout: 10000 }).should('exist')
+    cy.get('table thead').within(() => {
+      cy.contains('Public').should('exist')
+    })
+    cy.contains('Public Securities').click()
+    cy.contains('Public Securities').should('exist')
   })
 
   // ── Scenario 72 ──────────────────────────────────────────────────────────────

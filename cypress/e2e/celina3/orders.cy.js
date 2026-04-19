@@ -215,14 +215,62 @@ describe('Kreiranje naloga — S26, S28, S30, S32, S34, S36, S38, S42, S46', () 
 
   // ── Scenario 36 ──────────────────────────────────────────────────────────────
 
-  it.skip('Scenario 36: SELL order iz portfolija otvara formu za prodaju', () => {
-    // Skip: No /portfolio route found in frontend — cannot navigate to portfolio sell form
+  it('Scenario 36: SELL order iz portfolija otvara formu za prodaju', () => {
+    // Intercept: propusti page navigation (text/html), vrati mock za XHR poziv PortfolioPage-a.
+    cy.intercept({ method: 'GET', pathname: '/portfolio' }, (req) => {
+      if (req.headers.accept?.includes('text/html')) {
+        req.continue()
+      } else {
+        req.reply({
+          statusCode: 200,
+          body: {
+            portfolio: [{
+              id: 1, ticker: 'AAPL', assetType: 'STOCK',
+              amount: 10, price: 150.00, profit: 25.50,
+              lastModified: '2024-01-01T00:00:00Z',
+              isPublic: true, publicAmount: 5, listingId: 1,
+            }],
+          },
+        })
+      }
+    })
+
+    loginAs(ADMIN_EMAIL, ADMIN_PASS)
+    cy.visit('/portfolio')
+    cy.url().should('not.include', '/login')
+    cy.get('table', { timeout: 10000 }).should('exist')
+
+    cy.get('table tbody tr').first().within(() => {
+      cy.contains('button', 'Sell').click()
+    })
+
+    cy.url().should('include', 'SELL')
   })
 
   // ── Scenario 38 ──────────────────────────────────────────────────────────────
 
-  it.skip('Scenario 38: Korisnik ne može prodati više hartija nego što poseduje', () => {
-    // Skip: No /portfolio route found in frontend — cannot test sell quantity validation via UI
+  it('Scenario 38: Korisnik ne može prodati više hartija nego što poseduje', () => {
+    // Given: korisnik pokuša da proda više hartija nego što poseduje (API test)
+    cy.request('POST', `${API_BASE}/login`, { email: ADMIN_EMAIL, password: ADMIN_PASS })
+      .then(({ body: auth }) => {
+        // Pokušaj prodaje sa quantity=999999 (daleko više od posedovanog)
+        cy.request({
+          method: 'POST',
+          url: `${API_BASE}/orders`,
+          headers: { Authorization: `Bearer ${auth.access_token}` },
+          body: {
+            asset_id: firstStockId ?? 1,
+            quantity: 999999,
+            direction: 'SELL',
+            order_type: 'MARKET',
+            account_id: firstAccountId ?? 1,
+          },
+          failOnStatusCode: false,
+        }).then(({ status }) => {
+          // Then: sistem odbija order jer korisnik ne poseduje toliko hartija
+          expect(status).to.be.oneOf([400, 403, 422])
+        })
+      })
   })
 
   // ── Scenario 42 ──────────────────────────────────────────────────────────────
