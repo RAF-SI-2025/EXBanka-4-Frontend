@@ -68,6 +68,9 @@ describe('Agent Work Day', () => {
     cy.contains('a', 'View Options').click()
     cy.url().should('include', '/options')
 
+    // Wait for options to finish loading before interacting (component uses Unicode ellipsis …)
+    cy.contains(/Loading options/i, { timeout: 60000 }).should('not.exist')
+
     // The options page first shows a Settlement Dates table — click the first row's "View options →"
     cy.contains('Settlement Dates').should('be.visible')
     cy.contains('td', 'View options →').first().click()
@@ -325,7 +328,7 @@ describe('Agent Work Day', () => {
 
   // ── Part 8 ──────────────────────────────────────────────────────────────────
 
-  it('Part 8: Vasilije approves the SELL order; system executes it; Denis ends up with 5 MSFT shares', () => {
+  it('Part 8: SELL order is auto-approved (Denis has need_approval=false); system executes it; Denis ends up with 5 MSFT shares', () => {
     // Login as Vasilije
     cy.visit('/login')
     cy.get('input[name="email"]').type(VASILIJE_EMAIL)
@@ -337,32 +340,48 @@ describe('Agent Work Day', () => {
     cy.visit('/admin/orders')
     cy.contains('h1', 'Order Review').should('be.visible')
 
-    // Denis has need_approval=true, so the SELL order lands in PENDING first
-    cy.contains('button', 'PENDING').click()
-
-    // Find Denis's pending SELL order for 5 MSFT
-    cy.contains('tbody tr', 'Denis Elezovic')
-      .should('contain.text', 'MSFT')
-      .and('contain.text', '5')
-      .and('contain.text', 'SELL')
-      .and('contain.text', 'PENDING')
-      .as('denisSellRow')
-
-    // Approve the SELL order
-    cy.intercept('PUT', '**/orders/*/approve').as('approveSellOrder')
-    cy.get('@denisSellRow').contains('button', 'Approve').click()
-    cy.wait('@approveSellOrder').its('response.statusCode').should('be.oneOf', [200, 201])
-
-    // Switch to APPROVED — verify the order is now approved
+    // Denis has need_approval=false and SELL orders bypass the limit check entirely,
+    // so the order is auto-approved — it never lands in PENDING.
     cy.contains('button', 'APPROVED').click()
 
-    // Find Denis's approved SELL order for 5 MSFT
-    cy.contains('tbody tr', 'Denis Elezovic')
+    // Find Denis's approved SELL order for 5 MSFT (filter by SELL to avoid matching the BUY row)
+    cy.get('tbody tr')
+      .filter(':contains("Denis Elezovic")')
+      .filter(':contains("SELL")')
       .should('contain.text', 'MSFT')
       .and('contain.text', '5')
-      .and('contain.text', 'SELL')
       .and('contain.text', 'APPROVED')
 
+    // Poll until the SELL order reaches DONE (same pattern as Part 5)
+    const pollSellDone = (retriesLeft) => {
+      cy.visit('/admin/orders')
+      cy.contains('h1', 'Order Review').should('be.visible')
+      cy.contains('button', 'DONE').click()
+
+      cy.get('body').then(($body) => {
+        const rows = [...$body.find('tbody tr')]
+        const hasSellDoneRow = rows.some(tr =>
+          tr.textContent.includes('Denis Elezovic') &&
+          tr.textContent.includes('MSFT') &&
+          tr.textContent.includes('SELL')
+        )
+
+        if (hasSellDoneRow) {
+          cy.get('tbody tr')
+            .filter(':contains("Denis Elezovic")')
+            .filter(':contains("SELL")')
+            .should('contain.text', 'MSFT')
+            .and('contain.text', 'DONE')
+        } else if (retriesLeft > 0) {
+          cy.wait(3000)
+          pollSellDone(retriesLeft - 1)
+        } else {
+          throw new Error('SELL order did not reach DONE status within 30 s')
+        }
+      })
+    }
+
+    pollSellDone(10)
   })
 
   // ── Part 9 ──────────────────────────────────────────────────────────────────
