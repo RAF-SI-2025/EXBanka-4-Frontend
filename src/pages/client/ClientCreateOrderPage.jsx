@@ -30,6 +30,7 @@ export default function ClientCreateOrderPage() {
 
   const ticker    = searchParams.get('ticker')    ?? ''
   const direction = searchParams.get('direction') ?? 'BUY'
+  const maxAmount = searchParams.get('maxAmount') ? Number(searchParams.get('maxAmount')) : null
 
   const [listing,     setListing]     = useState(null)
   const [accounts,    setAccounts]    = useState([])
@@ -43,9 +44,10 @@ export default function ClientCreateOrderPage() {
   const [isMargin,   setIsMargin]   = useState(false)
   const [accountId,  setAccountId]  = useState('')
 
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [submitting,  setSubmitting]  = useState(false)
-  const [submitted,   setSubmitted]   = useState(false)
+  const [showConfirm,  setShowConfirm]  = useState(false)
+  const [submitting,   setSubmitting]   = useState(false)
+  const [submitted,    setSubmitted]    = useState(false)
+  const [submitError,  setSubmitError]  = useState(null)
 
   useEffect(() => {
     if (!ticker) { setLoadingInit(false); return }
@@ -90,6 +92,7 @@ export default function ClientCreateOrderPage() {
 
   async function handleSubmit() {
     setSubmitting(true)
+    setSubmitError(null)
     try {
       await orderService.createClientOrder({
         assetId:    listing.id,
@@ -103,6 +106,8 @@ export default function ClientCreateOrderPage() {
       })
       setSubmitted(true)
       setShowConfirm(false)
+    } catch (err) {
+      setSubmitError(err?.response?.data?.error ?? 'Order failed. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -137,14 +142,18 @@ export default function ClientCreateOrderPage() {
           <div className="text-center">
             <p className="text-xs tracking-widest uppercase text-emerald-600 dark:text-emerald-400 mb-2">Order submitted</p>
             <h2 className="font-serif text-2xl font-light text-slate-900 dark:text-white mb-6">Your order is being processed.</h2>
-            <button onClick={() => navigate(-1)} className="btn-primary">Go Back</button>
+            <button
+              onClick={() => navigate('/client/portfolio', { replace: true, state: direction === 'SELL' ? { pendingSell: ticker } : undefined })}
+              className="btn-primary"
+            >Go Back</button>
           </div>
         </div>
       </ClientPortalLayout>
     )
   }
 
-  const canSubmit = Number(quantity) >= 1 && accountId !== ''
+  const qty = Number(quantity)
+  const canSubmit = qty >= 1 && accountId !== '' && (maxAmount === null || qty <= maxAmount)
 
   return (
     <ClientPortalLayout>
@@ -167,8 +176,13 @@ export default function ClientCreateOrderPage() {
           </p>
 
           <div>
-            <label className="block text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 mb-2">Quantity</label>
-            <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="input-field w-full" />
+            <label className="block text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 mb-2">
+              Quantity{maxAmount !== null && <span className="normal-case font-light ml-1">(max {maxAmount})</span>}
+            </label>
+            <input type="number" min="1" max={maxAmount ?? undefined} value={quantity} onChange={(e) => setQuantity(e.target.value)} className={`input-field w-full ${maxAmount !== null && qty > maxAmount ? 'input-error' : ''}`} />
+            {maxAmount !== null && qty > maxAmount && (
+              <p className="text-xs text-red-500 mt-1">Cannot sell more than you own ({maxAmount})</p>
+            )}
           </div>
 
           <div>
@@ -243,11 +257,14 @@ export default function ClientCreateOrderPage() {
                 <span className="text-slate-900 dark:text-white font-medium">{fmt(approxPrice())}</span>
               </div>
             </div>
+            {submitError && (
+              <p className="text-xs text-red-500 mb-4 text-center">{submitError}</p>
+            )}
             <div className="flex gap-3">
               <button onClick={handleSubmit} disabled={submitting} className="btn-primary flex-1 disabled:opacity-50">
                 {submitting ? '…' : 'Confirm'}
               </button>
-              <button onClick={() => setShowConfirm(false)} disabled={submitting} className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50">
+              <button onClick={() => { setShowConfirm(false); setSubmitError(null) }} disabled={submitting} className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50">
                 Cancel
               </button>
             </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { clientPortfolioService } from '../../services/clientPortfolioService'
@@ -21,20 +21,37 @@ function TypeBadge({ type }) {
 export default function ClientPortfolioPage() {
   useWindowTitle('Portfolio | AnkaBanka')
   const navigate = useNavigate()
+  const location = useLocation()
 
-  const [holdings, setHoldings]   = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [error, setError]         = useState(null)
-  const [activeTab, setActiveTab] = useState(TABS[0])
+  const [holdings,     setHoldings]     = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [error,        setError]        = useState(null)
+  const [activeTab,    setActiveTab]    = useState(TABS[0])
+  const [pendingSells, setPendingSells] = useState(new Set())
+
+  useEffect(() => {
+    if (location.state?.pendingSell) {
+      setPendingSells(prev => new Set([...prev, location.state.pendingSell]))
+    }
+  }, [location.state])
 
   useEffect(() => {
     setLoading(true)
     setError(null)
     clientPortfolioService.getPortfolio()
-      .then(data => setHoldings(data.portfolio ?? []))
+      .then(data => {
+        const fresh = data.portfolio ?? []
+        setHoldings(fresh)
+        setPendingSells(prev => {
+          if (prev.size === 0) return prev
+          const tickers = new Set(fresh.map(h => h.ticker || String(h.listingId)))
+          const updated = new Set([...prev].filter(t => tickers.has(t)))
+          return updated.size === prev.size ? prev : updated
+        })
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
-  }, [])
+  }, [location.key])
 
   const displayed = activeTab.key === 'public'
     ? holdings.filter(h => h.isPublic)
@@ -118,12 +135,18 @@ export default function ClientPortfolioPage() {
                           {h.assetType === 'STOCK' ? h.publicAmount : '—'}
                         </td>
                         <td className="px-4 py-3">
-                          <button
-                            onClick={() => navigate(`/client/orders/new?ticker=${encodeURIComponent(h.ticker || h.listingId)}&direction=SELL`)}
-                            className="border border-red-400 text-red-500 text-xs px-3 py-1 hover:bg-red-500 hover:text-white transition-all duration-150"
-                          >
-                            Sell
-                          </button>
+                          {pendingSells.has(h.ticker || String(h.listingId)) ? (
+                            <span className="text-xs px-3 py-1 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 cursor-not-allowed">
+                              Pending…
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => navigate(`/client/orders/new?ticker=${encodeURIComponent(h.ticker || h.listingId)}&direction=SELL&maxAmount=${h.amount}`)}
+                              className="border border-red-400 text-red-500 text-xs px-3 py-1 hover:bg-red-500 hover:text-white transition-all duration-150"
+                            >
+                              Sell
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))

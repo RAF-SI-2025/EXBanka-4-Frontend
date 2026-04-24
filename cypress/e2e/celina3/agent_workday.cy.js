@@ -78,11 +78,11 @@ describe('Agent Work Day', () => {
     // Options chain table is now visible
     cy.contains('th', 'Calls').should('be.visible')
 
-    // Verify In-The-Money rows are colored green (bg-emerald-50/60 on the call or put td)
-    cy.get('td[colspan="5"][class*="bg-emerald-50"]').should('exist')
+    // Verify In-The-Money rows are colored green (bg-emerald-50/60 on the call or put td, colspan=6)
+    cy.get('td[colspan="6"][class*="bg-emerald-50"]').should('exist')
 
-    // Verify Out-Of-The-Money rows also exist (td[colspan="5"] without that class)
-    cy.get('td[colspan="5"]').then(($tds) => {
+    // Verify Out-Of-The-Money rows also exist (td[colspan="6"] without that class)
+    cy.get('td[colspan="6"]').then(($tds) => {
       const otmCount = [...$tds].filter(td => !td.className.includes('bg-emerald-50')).length
       expect(otmCount).to.be.greaterThan(0)
     })
@@ -341,16 +341,32 @@ describe('Agent Work Day', () => {
     cy.contains('h1', 'Order Review').should('be.visible')
 
     // Denis has need_approval=false and SELL orders bypass the limit check entirely,
-    // so the order is auto-approved — it never lands in PENDING.
+    // so the order is auto-approved and may execute immediately — check APPROVED or DONE.
+    // First try APPROVED; if the row is already DONE, that's also acceptable.
     cy.contains('button', 'APPROVED').click()
-
-    // Find Denis's approved SELL order for 5 MSFT (filter by SELL to avoid matching the BUY row)
-    cy.get('tbody tr')
-      .filter(':contains("Denis Elezovic")')
-      .filter(':contains("SELL")')
-      .should('contain.text', 'MSFT')
-      .and('contain.text', '5')
-      .and('contain.text', 'APPROVED')
+    cy.get('body').then(($body) => {
+      const sellApprovedExists = [...$body.find('tbody tr')].some(tr =>
+        tr.textContent.includes('Denis Elezovic') &&
+        tr.textContent.includes('SELL') &&
+        tr.textContent.includes('MSFT')
+      )
+      if (!sellApprovedExists) {
+        // Order already moved to DONE — verify there
+        cy.contains('button', 'DONE').click()
+        cy.get('tbody tr')
+          .filter(':contains("Denis Elezovic")')
+          .filter(':contains("SELL")')
+          .should('contain.text', 'MSFT')
+          .and('contain.text', '5')
+          .and('contain.text', 'DONE')
+        return
+      }
+      cy.get('tbody tr')
+        .filter(':contains("Denis Elezovic")')
+        .filter(':contains("SELL")')
+        .should('contain.text', 'MSFT')
+        .and('contain.text', '5')
+    })
 
     // Poll until the SELL order reaches DONE (same pattern as Part 5)
     const pollSellDone = (retriesLeft) => {
