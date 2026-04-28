@@ -28,6 +28,7 @@ export default function ClientPortfolioPage() {
   const [error,        setError]        = useState(null)
   const [activeTab,    setActiveTab]    = useState(TABS[0])
   const [pendingSells, setPendingSells] = useState(new Set())
+  const [profit,       setProfit]       = useState(null)
 
   useEffect(() => {
     if (location.state?.pendingSell) {
@@ -38,9 +39,12 @@ export default function ClientPortfolioPage() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    clientPortfolioService.getPortfolio()
-      .then(data => {
-        const fresh = data.portfolio ?? []
+    Promise.all([
+      clientPortfolioService.getPortfolio(),
+      clientPortfolioService.getProfit(),
+    ])
+      .then(([portfolioData, profitData]) => {
+        const fresh = portfolioData.portfolio ?? []
         setHoldings(fresh)
         setPendingSells(prev => {
           if (prev.size === 0) return prev
@@ -48,6 +52,7 @@ export default function ClientPortfolioPage() {
           const updated = new Set([...prev].filter(t => tickers.has(t)))
           return updated.size === prev.size ? prev : updated
         })
+        setProfit(profitData?.totalProfit ?? profitData?.profit ?? profitData ?? null)
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
@@ -61,8 +66,24 @@ export default function ClientPortfolioPage() {
     <ClientPortalLayout>
       <div className="p-6">
         {/* Header */}
-        <h1 className="font-serif text-2xl font-light text-slate-900 dark:text-white mb-1">My Portfolio</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Current holdings and profit/loss</p>
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h1 className="font-serif text-2xl font-light text-slate-900 dark:text-white mb-1">My Portfolio</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Current holdings and profit/loss</p>
+          </div>
+          {profit !== null && (
+            <div className="text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm px-5 py-3 min-w-[140px]">
+              <p className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 font-medium mb-1">Total Profit</p>
+              <p className={`text-lg font-semibold tabular-nums ${
+                profit >= 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-red-500 dark:text-red-400'
+              }`}>
+                {profit >= 0 ? '+' : ''}{fmt(profit)}
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-1 mb-5 border-b border-slate-200 dark:border-slate-700">
