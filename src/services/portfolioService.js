@@ -12,7 +12,7 @@ export const portfolioService = {
   },
 
   async getMyTax() {
-    const { data } = await apiClient.get('/client/tax/my')
+    const { data } = await apiClient.get('/tax/my')
     return data
   },
 }
