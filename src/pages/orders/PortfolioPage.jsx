@@ -26,6 +26,7 @@ export default function PortfolioPage() {
   const [error, setError]         = useState(null)
   const [activeTab, setActiveTab] = useState(TABS[0])
   const [profit, setProfit]       = useState(null)
+  const [tax, setTax]             = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -33,10 +34,12 @@ export default function PortfolioPage() {
     Promise.all([
       portfolioService.getPortfolio(),
       portfolioService.getProfit(),
+      portfolioService.getMyTax().catch(() => null),
     ])
-      .then(([portfolioData, profitData]) => {
+      .then(([portfolioData, profitData, taxData]) => {
         setHoldings(portfolioData.portfolio ?? [])
         setProfit(profitData?.totalProfit ?? null)
+        setTax(taxData ?? null)
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
@@ -54,18 +57,35 @@ export default function PortfolioPage() {
           <h1 className="font-serif text-2xl font-light text-slate-900 dark:text-white mb-1">My Portfolio</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">Current holdings and profit/loss</p>
         </div>
-        {profit !== null && (
-          <div className="text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm px-5 py-3 min-w-[140px]">
-            <p className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 font-medium mb-1">Total Profit</p>
-            <p className={`text-lg font-semibold tabular-nums ${
-              profit >= 0
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-red-500 dark:text-red-400'
-            }`}>
-              {profit >= 0 ? '+' : ''}{fmt(profit)}
-            </p>
-          </div>
-        )}
+        <div className="flex gap-3">
+          {profit !== null && (
+            <div className="text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm px-5 py-3 min-w-[140px]">
+              <p className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 font-medium mb-1">Total Profit</p>
+              <p className={`text-lg font-semibold tabular-nums ${
+                profit >= 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-red-500 dark:text-red-400'
+              }`}>
+                {profit >= 0 ? '+' : ''}{fmt(profit)}
+              </p>
+            </div>
+          )}
+          {tax !== null && (
+            <div className="text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm px-5 py-3 min-w-[160px]">
+              <p className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 font-medium mb-2">Tax</p>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Paid this year</span>
+                  <span className="text-sm font-semibold tabular-nums text-slate-700 dark:text-slate-300">{fmt(tax.paidThisYear, 'RSD')}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Unpaid this month</span>
+                  <span className="text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">{fmt(tax.unpaidThisMonth, 'RSD')}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}

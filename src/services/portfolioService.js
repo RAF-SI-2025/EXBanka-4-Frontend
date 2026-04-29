@@ -10,4 +10,9 @@ export const portfolioService = {
     const { data } = await apiClient.get('/portfolio/profit')
     return data
   },
+
+  async getMyTax() {
+    const { data } = await apiClient.get('/client/tax/my')
+    return data
+  },
 }
