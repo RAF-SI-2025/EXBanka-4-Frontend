@@ -15,7 +15,6 @@ const TYPE_BADGE = {
 export default function TaxTrackingPage() {
   useWindowTitle('Tax Tracking | AnkaBanka')
   const { canAny } = usePermission()
-  if (!canAny(['isSupervisor', 'isAdmin'])) return <Navigate to="/" replace />
 
   const [entries,    setEntries]    = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -23,6 +22,8 @@ export default function TaxTrackingPage() {
   const [typeFilter, setTypeFilter] = useState('ALL')
   const [nameInput,  setNameInput]  = useState('')
   const [nameFilter, setNameFilter] = useState('')
+
+  if (!canAny(['isSupervisor', 'isAdmin'])) return <Navigate to="/" replace />
 
   useEffect(() => {
     const id = setTimeout(() => setNameFilter(nameInput.trim()), 300)
@@ -50,6 +51,8 @@ export default function TaxTrackingPage() {
     try {
       await taxService.collectTax()
       load()
+    } catch {
+      // error toast handled by Axios interceptor
     } finally {
       setCollecting(false)
     }
