@@ -77,6 +77,12 @@ export const NAV_ITEMS = [
     icon: 'M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
     show: (p) => p?.isAgent || p?.isSupervisor,
   },
+  {
+    label: 'Tax',
+    href: '/admin/tax',
+    icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z',
+    show: (p) => p?.isSupervisor || p?.isAdmin,
+  },
 ]
 
 export default function EmployeePortalLayout() {
