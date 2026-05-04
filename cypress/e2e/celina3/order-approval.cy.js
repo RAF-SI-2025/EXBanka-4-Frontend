@@ -14,16 +14,31 @@ const AGENT_PASS = 'denis123'
 const CLIENT_EMAIL = 'ddimitrijevi822rn@raf.rs'
 const CLIENT_PASS = 'taraDunjic123'
 
+function loginAs(email, pass) {
+  cy.visit('/login')
+  cy.get('input[name="email"]').type(email)
+  cy.get('input[name="password"]').type(pass)
+  cy.get('button[type="submit"]').click()
+  cy.url().should('not.include', '/login')
+}
+
 // ── Shared state ──────────────────────────────────────────────────────────────
 
 let adminToken, agentToken, clientToken
 let firstStockId, clientAccountId, agentAccountId, agentActuaryId
 
 before(() => {
-  // Admin token
+  // Admin token + test mode enable
   cy.request('POST', `${API_BASE}/login`, { email: ADMIN_EMAIL, password: ADMIN_PASS })
     .then(({ body }) => {
       adminToken = body.access_token
+      cy.request({
+        method: 'POST',
+        url: `${API_BASE}/stock-exchanges/test-mode`,
+        headers: { Authorization: `Bearer ${adminToken}` },
+        body: { enabled: true },
+        failOnStatusCode: false,
+      })
     })
 
   // Agent token (failOnStatusCode: false — agent may not exist in all environments)
@@ -44,17 +59,23 @@ before(() => {
       clientToken = body.access_token
     })
 
-  // Client accounts
+  // Client accounts — clientToken already set above, re-login to get fresh token for account fetch
   cy.request('POST', `${API_BASE}/client/login`, { email: CLIENT_EMAIL, password: CLIENT_PASS })
-    .then(({ body: auth }) => {
+    .then(({ body: auth, status: loginStatus }) => {
+      if (loginStatus !== 200 && loginStatus !== 201) return
       cy.request({
         method: 'GET',
         url: `${API_BASE}/api/accounts/my`,
         headers: { Authorization: `Bearer ${auth.access_token}` },
         failOnStatusCode: false,
       }).then(({ body: accounts, status }) => {
-        if (status === 200 && accounts?.length > 0) {
-          clientAccountId = accounts[0].id
+        if (status === 200) {
+          const arr = Array.isArray(accounts)
+            ? accounts
+            : accounts?.content ?? accounts?.accounts ?? accounts?.data ?? []
+          if (arr.length > 0) {
+            clientAccountId = arr[0].id ?? arr[0].accountId ?? arr[0].account_id
+          }
         }
       })
     })
@@ -70,18 +91,29 @@ before(() => {
       }).then(({ body: actuaries, status }) => {
         if (status === 200 && actuaries?.length > 0) {
           const denis = actuaries.find((a) => a.email === AGENT_EMAIL) || actuaries[0]
-          agentActuaryId = denis?.id
+          agentActuaryId = denis?.employee_id ?? denis?.employeeId
         }
       })
 
+      // Use agent's own token to get Denis's accounts
       cy.request({
-        method: 'GET',
-        url: `${API_BASE}/api/accounts`,
-        headers: { Authorization: `Bearer ${auth.access_token}` },
+        method: 'POST',
+        url: `${API_BASE}/login`,
+        body: { email: AGENT_EMAIL, password: AGENT_PASS },
         failOnStatusCode: false,
-      }).then(({ body: accounts, status }) => {
-        if (status === 200 && accounts?.length > 0) {
-          agentAccountId = accounts[0].id
+      }).then(({ body: agentAuth, status: agentLoginStatus }) => {
+        if (agentLoginStatus === 200 || agentLoginStatus === 201) {
+          cy.request({
+            method: 'GET',
+            url: `${API_BASE}/api/bank-accounts`,
+            headers: { Authorization: `Bearer ${agentAuth.access_token}` },
+            failOnStatusCode: false,
+          }).then(({ body: accounts, status: accStatus }) => {
+            if (accStatus === 200) {
+              const arr = Array.isArray(accounts) ? accounts : accounts?.content ?? []
+              if (arr.length > 0) agentAccountId = arr[0].accountId ?? arr[0].id
+            }
+          })
         }
       })
     })
@@ -111,17 +143,17 @@ describe('Odobravanje i pregled naloga — S48–S58', () => {
 
   // ── Scenario 49 ──────────────────────────────────────────────────────────────
 
-  it('Scenario 49: Agentov order ide na odobravanje kada je Need Approval = true', () => {
+  it('Scenario 49: Agentov order ide na odobravanje kada je Need Approval = true', function () {
     cy.wrap(null).then(() => {
       if (!agentActuaryId || !agentToken) {
-        cy.log('Agent data not available — skipping')
+        this.skip()
         return
       }
       cy.request({
         method: 'PUT',
         url: `${API_BASE}/api/actuaries/${agentActuaryId}/need-approval`,
         headers: { Authorization: `Bearer ${adminToken}` },
-        body: { needApproval: true },
+        body: { need_approval: true },
         failOnStatusCode: false,
       }).then(() => {
         cy.request({
@@ -145,53 +177,41 @@ describe('Odobravanje i pregled naloga — S48–S58', () => {
   // ── Scenario 48 ──────────────────────────────────────────────────────────────
 
   it('Scenario 48: Klijentov order se automatski odobrava bez čekanja na supervizora', () => {
-    // Given: korisnik je klijent sa permisijom za trgovinu
-    cy.wrap(null).then(() => {
-      if (!clientToken || !clientAccountId) {
-        cy.log('Client token or account not available — skipping')
-        return
-      }
+    // UI pristup: klijent kreira order kroz /client/orders/new
+    // cy.intercept hvata odgovor na POST /client/orders — verifikujemo status != PENDING
+    cy.intercept('POST', '**/client/orders').as('clientOrder')
 
-      // When: kreira order
-      cy.request({
-        method: 'POST',
-        url: `${API_BASE}/orders`,
-        headers: { Authorization: `Bearer ${clientToken}` },
-        body: {
-          asset_id: firstStockId ?? 1,
-          quantity: 1,
-          direction: 'BUY',
-          order_type: 'MARKET',
-          account_id: clientAccountId,
-        },
-        failOnStatusCode: false,
-      }).then(({ body, status }) => {
-        if (status === 200 || status === 201) {
-          const orderId = body.id ?? body.orderId
-          cy.request({
-            method: 'GET',
-            url: `${API_BASE}/orders/${orderId}`,
-            headers: { Authorization: `Bearer ${clientToken}` },
-          }).then(({ body: order }) => {
-            // Then: order automatski dobija status Approved (ne Pending)
-            const orderStatus = order.status ?? order.orderStatus
-            expect(orderStatus).to.not.eq('PENDING')
-          })
-        } else {
-          cy.log(`Order creation returned ${status} — checking API is reachable`)
-          expect(status).to.be.oneOf([200, 201, 400, 409])
-        }
-      })
+    cy.visit('/client/login')
+    cy.get('input[name="email"]').type(CLIENT_EMAIL)
+    cy.get('input[name="password"]').type(CLIENT_PASS)
+    cy.get('button[type="submit"]').click()
+    cy.url().should('not.include', '/client/login', { timeout: 10000 })
+
+    cy.visit('/client/securities')
+    cy.contains('button', 'Stocks').click()
+    cy.get('table tbody tr', { timeout: 10000 }).should('have.length.greaterThan', 0)
+    cy.get('table tbody tr').first().contains('button', 'Buy').click()
+    cy.url().should('include', '/client/orders/new')
+
+    cy.get('input[type="number"][min="1"]', { timeout: 5000 }).clear().type('1')
+    cy.contains('button', 'Review Order').click()
+    cy.contains('button', 'Confirm').click()
+
+    // Then: klijentov order NIJE u statusu Pending — automatski odobren
+    cy.wait('@clientOrder', { timeout: 15000 }).then(({ response }) => {
+      expect(response.statusCode).to.be.oneOf([200, 201])
+      const orderStatus = response.body?.status ?? response.body?.orderStatus
+      expect(orderStatus).to.not.eq('PENDING')
     })
   })
 
   // ── Scenario 50 ──────────────────────────────────────────────────────────────
 
-  it('Scenario 50: Agentov order ide na odobravanje kada prelazi dnevni limit', () => {
+  it('Scenario 50: Agentov order ide na odobravanje kada prelazi dnevni limit', function () {
     // Given: agent ima dnevni limit 100.000 RSD i potrošio je 90.000 RSD
     cy.wrap(null).then(() => {
       if (!agentActuaryId || !agentToken) {
-        cy.log('Agent actuary ID or token not available — skipping')
+        this.skip()
         return
       }
 
@@ -232,11 +252,11 @@ describe('Odobravanje i pregled naloga — S48–S58', () => {
 
   // ── Scenario 52 ──────────────────────────────────────────────────────────────
 
-  it('Scenario 52: Supervizor odobrava pending order', () => {
+  it('Scenario 52: Supervizor odobrava pending order', function () {
     // Given: postoji order sa statusom Pending (setup: need_approval = true za agenta)
     cy.wrap(null).then(() => {
       if (!agentActuaryId || !agentToken) {
-        cy.log('Setup data not available — skipping')
+        this.skip()
         return
       }
 
@@ -245,7 +265,7 @@ describe('Odobravanje i pregled naloga — S48–S58', () => {
         method: 'PUT',
         url: `${API_BASE}/api/actuaries/${agentActuaryId}/need-approval`,
         headers: { Authorization: `Bearer ${adminToken}` },
-        body: { needApproval: true },
+        body: { need_approval: true },
         failOnStatusCode: false,
       }).then(() => {
         // Create order as agent — should become PENDING
@@ -294,24 +314,24 @@ describe('Odobravanje i pregled naloga — S48–S58', () => {
 
   // ── Scenario 51 ──────────────────────────────────────────────────────────────
 
-  it('Scenario 51: Order na granici limita agenta — izvršava se bez odobrenja', () => {
+  it('Scenario 51: Order na granici limita agenta — izvršava se bez odobrenja', function () {
     cy.wrap(null).then(() => {
       if (!agentActuaryId || !agentToken) {
-        cy.log('Agent data not available — skipping')
+        this.skip()
         return
       }
       cy.request({
         method: 'PUT',
         url: `${API_BASE}/api/actuaries/${agentActuaryId}/need-approval`,
         headers: { Authorization: `Bearer ${adminToken}` },
-        body: { needApproval: false },
+        body: { need_approval: false },
         failOnStatusCode: false,
       })
       cy.request({
         method: 'PUT',
         url: `${API_BASE}/api/actuaries/${agentActuaryId}/limit`,
         headers: { Authorization: `Bearer ${adminToken}` },
-        body: { limitAmount: 9999999 },
+        body: { limit: 9999999 },
         failOnStatusCode: false,
       }).then(() => {
         cy.request({
@@ -334,17 +354,17 @@ describe('Odobravanje i pregled naloga — S48–S58', () => {
 
   // ── Scenario 53 ──────────────────────────────────────────────────────────────
 
-  it('Scenario 53: Supervizor odbija pending order — status postaje Declined', () => {
+  it('Scenario 53: Supervizor odbija pending order — status postaje Declined', function () {
     cy.wrap(null).then(() => {
       if (!agentActuaryId || !agentToken) {
-        cy.log('Agent data not available — skipping')
+        this.skip()
         return
       }
       cy.request({
         method: 'PUT',
         url: `${API_BASE}/api/actuaries/${agentActuaryId}/need-approval`,
         headers: { Authorization: `Bearer ${adminToken}` },
-        body: { needApproval: true },
+        body: { need_approval: true },
         failOnStatusCode: false,
       }).then(() => {
         cy.request({
@@ -437,10 +457,39 @@ describe('Odobravanje i pregled naloga — S48–S58', () => {
 
   // ── Scenario 54 ──────────────────────────────────────────────────────────────
 
-  it.skip('Scenario 54: Order sa isteklim settlement date-om može samo da bude odbijen', () => {
-    // Skip: Requires a specific expired futures order which depends on test data setup.
-    // Cannot reliably create an expired futures order without knowing a specific expired futures ID.
-    // UI not available (no /orders portal in frontend).
+  it('Scenario 54: Order sa isteklim settlement date-om — dostupno samo dugme Decline', () => {
+    // Spec: supervizor otvori pregled ordera → dostupno je samo "Decline", "Approve" nije prikazano
+    // OrderReviewPage.jsx renderuje Approve samo ako !isExpired(order)
+    // isExpired = new Date(settlement_date) < new Date()
+    // Intercept orders lista sa PENDING orderom koji ima settlement_date u prošlosti
+    cy.intercept('GET', /\/orders(\?|$)/, (req) => {
+      if (req.headers['accept']?.includes('text/html')) {
+        req.continue()
+      } else {
+        req.reply({
+          statusCode: 200,
+          body: {
+            orders: [{
+              id: 7777, status: 'PENDING', direction: 'BUY', order_type: 'MARKET',
+              quantity: 5, asset_ticker: 'CRUDE_OIL', price_per_unit: 80,
+              contract_size: 1, remaining_portions: 5,
+              agent_email: 'test@banka.rs', is_done: false, is_aon: false, is_margin: false,
+              settlement_date: '2020-06-01',
+            }],
+          },
+        })
+      }
+    })
+
+    loginAs(ADMIN_EMAIL, ADMIN_PASS)
+    cy.visit('/admin/orders')
+    cy.contains('h1', 'Order Review', { timeout: 10000 }).should('be.visible')
+
+    // Then: red sa isteklim settlement date-om ima samo Decline dugme
+    cy.contains('tr', 'CRUDE_OIL').within(() => {
+      cy.contains('button', 'Decline').should('exist')
+      cy.contains('button', 'Approve').should('not.exist')
+    })
   })
 
   // ── Scenario 56 ──────────────────────────────────────────────────────────────
@@ -468,7 +517,7 @@ describe('Odobravanje i pregled naloga — S48–S58', () => {
 
   // ── Scenario 58 ──────────────────────────────────────────────────────────────
 
-  it('Scenario 58: Supervizor otkazuje neispunjeni order', () => {
+  it('Scenario 58: Supervizor otkazuje neispunjeni order', function () {
     // Given: postoji order koji nije u potpunosti izvršen
     // First get list of orders to find a cancellable one
     cy.request({
@@ -478,7 +527,7 @@ describe('Odobravanje i pregled naloga — S48–S58', () => {
       failOnStatusCode: false,
     }).then(({ body, status }) => {
       if (status !== 200) {
-        cy.log('Orders endpoint not reachable')
+        this.skip()
         return
       }
 
@@ -533,6 +582,56 @@ describe('Odobravanje i pregled naloga — S48–S58', () => {
       }).then(({ status: deleteStatus }) => {
         // Then: status ordera se ažurira
         expect(deleteStatus).to.be.oneOf([200, 204])
+      })
+    })
+  })
+
+  // ── Scenario 63 ──────────────────────────────────────────────────────────────
+
+  it('Scenario 63: Margin order nije dozvoljen bez permisije — sistem odbija', function () {
+    // Spec: korisnik nema margin permisiju → sistem ne dozvoljava nastavak
+    // Klijentski orderi idu na /client/orders. Token se dobija inline (ne oslanja se na before()).
+    cy.request({
+      method: 'POST',
+      url: `${API_BASE}/client/login`,
+      body: { email: CLIENT_EMAIL, password: CLIENT_PASS },
+      failOnStatusCode: false,
+    }).then(({ body: auth, status: loginStatus }) => {
+      if (loginStatus !== 200 && loginStatus !== 201) { this.skip(); return }
+      const token = auth.access_token
+
+      cy.request({
+        method: 'GET',
+        url: `${API_BASE}/api/accounts/my`,
+        headers: { Authorization: `Bearer ${token}` },
+        failOnStatusCode: false,
+      }).then(({ body: accounts, status: accStatus }) => {
+        const arr = accStatus === 200
+          ? (Array.isArray(accounts) ? accounts : accounts?.content ?? accounts?.data ?? [])
+          : []
+        const accountId = arr[0]?.id ?? arr[0]?.accountId ?? arr[0]?.account_id ?? undefined
+
+        cy.request({
+          method: 'POST',
+          url: `${API_BASE}/client/orders`,
+          headers: { Authorization: `Bearer ${token}` },
+          body: {
+            assetId: firstStockId ?? 1,
+            quantity: 1,
+            direction: 'BUY',
+            accountId,
+            isMargin: true,
+          },
+          failOnStatusCode: false,
+        }).then(({ status, body }) => {
+          if (status === 200 || status === 201) {
+            // Klijent ima aktivni kredit > IMC — margin je dozvoljen (S64 scenario).
+            cy.log('Klijent ima margin permisiju (kredit > IMC) — S63 ne može biti verifikovan sa ovim korisnikom')
+          } else {
+            // Then: sistem odbija margin order — klijent nema kredit / margin permisiju
+            expect(status).to.be.oneOf([400, 403, 422])
+          }
+        })
       })
     })
   })

@@ -103,14 +103,20 @@ describe('Hartije od vrednosti — S10–S24', () => {
     cy.visit('/securities')
     cy.get('table tbody tr', { timeout: 10000 }).should('have.length.greaterThan', 0)
 
-    // When: unese prefix "XN" u filter za exchange (npr. XNYS — NYSE)
-    cy.get('input[placeholder="Prefix…"]').clear().type('XN')
+    // Record initial unfiltered row count
+    cy.get('table tbody tr').then(($before) => {
+      const initialCount = $before.length
 
-    // Wait for debounce and filter to apply
-    cy.wait(800)
+      // When: unese prefix "XN" u filter za exchange (npr. XNYS — NYSE)
+      cy.get('input[placeholder="Prefix…"]').clear().type('XN')
+      cy.wait(800)
 
-    // Then: tabela je vidljiva (lista se filtrira)
-    cy.get('table').should('exist')
+      // Then: broj prikazanih hartija je manji ili jednak ukupnom broju
+      // (filter je primenjen — nije prikazano više hartija nego pre filtera)
+      cy.get('table tbody tr').should(($after) => {
+        expect($after.length).to.be.at.most(initialCount)
+      })
+    })
   })
 
   // ── Scenario 15 ──────────────────────────────────────────────────────────────
@@ -145,10 +151,24 @@ describe('Hartije od vrednosti — S10–S24', () => {
     cy.get('table tbody tr').should('have.length.greaterThan', 0)
   })
 
-  // ── Scenario 17 — skip ───────────────────────────────────────────────────────
+  // ── Scenario 17 ──────────────────────────────────────────────────────────────
 
-  it.skip('Scenario 17: Automatsko osvežavanje podataka na intervalu', () => {
-    // Skip: zahteva čekanje na timer interval — nije pogodan za E2E test.
+  it('Scenario 17: Automatsko osvežavanje podataka na intervalu', () => {
+    // Given: korisnik je na listi hartija
+    // Intercept pre login-a, pa drugi alias hvata automatski refresh
+    cy.intercept('GET', /\/securities(\?|$)/).as('secLoad')
+
+    loginAs(ADMIN_EMAIL, ADMIN_PASS)
+    cy.visit('/securities')
+
+    // When: prođe definisani vremenski interval (REFRESH_INTERVAL = 60 s)
+    cy.wait('@secLoad', { timeout: 15000 }) // initial load
+
+    // Then: podaci se automatski osvežavaju — drugi poziv bez korisničke akcije
+    cy.wait('@secLoad', { timeout: 70000 }) // auto-refresh fires after ~60 s
+
+    // And: tabela i dalje prikazuje podatke
+    cy.get('table tbody tr').should('have.length.greaterThan', 0)
   })
 
   // ── Scenario 18 ──────────────────────────────────────────────────────────────
@@ -217,16 +237,47 @@ describe('Hartije od vrednosti — S10–S24', () => {
     cy.get('table tbody tr', { timeout: 10000 }).should('have.length.greaterThan', 0)
     cy.get('table tbody tr').first().within(() => cy.get('button').first().click())
     cy.url().should('include', '/securities/')
+
+    // Intercept the OPTIONS securities query before clicking "View Options".
+    // StockOptionsPage calls getListings({ type: 'OPTION', ticker: ... }) which maps to
+    // GET /securities?type=OPTION&... — mock data guarantees ITM strikes exist regardless of DB state.
+    // Strike 100 < any real MSFT price → isCallITM = true → bg-emerald-50/60 on CALL side.
+    // Strike 99999 > any real MSFT price → isPutITM = true → bg-emerald-50/60 on PUT side.
+    cy.intercept('GET', /\/securities(\?|$)/, (req) => {
+      if (/type=OPTION/.test(req.url)) {
+        req.reply({
+          statusCode: 200,
+          body: {
+            listings: [
+              {
+                id: 9001, ticker: 'MSFT260620C00100000', name: 'MSFT Call 100', type: 'OPTION',
+                optionType: 'CALL', strikePrice: 100, settlementDate: '2026-06-20',
+                price: 310.00, changePercent: 1.50, volume: 500, openInterest: 2000,
+              },
+              {
+                id: 9002, ticker: 'MSFT260620P99999000', name: 'MSFT Put 99999', type: 'OPTION',
+                optionType: 'PUT', strikePrice: 99999, settlementDate: '2026-06-20',
+                price: 99590.00, changePercent: -0.80, volume: 300, openInterest: 1500,
+              },
+            ],
+            totalPages: 1, totalElements: 2,
+          },
+        })
+      } else {
+        req.continue()
+      }
+    }).as('optionsData')
+
     cy.contains('View Options', { timeout: 10000 }).click()
     cy.url().should('include', '/options')
-    cy.get('body').then($body => {
-      if ($body.find('table tbody tr').length > 0) {
-        cy.get('table tbody tr').first().click()
-        cy.get('[class*="bg-emerald"]', { timeout: 5000 }).should('exist')
-      } else {
-        cy.log('No options data available — skip ITM check')
-      }
-    })
+    cy.contains('Loading options', { timeout: 10000 }).should('not.exist')
+
+    // Settlement date table shows the mocked date — click it to load the options table
+    cy.get('table tbody tr', { timeout: 5000 }).should('have.length.greaterThan', 0)
+    cy.get('table tbody tr').first().click()
+
+    // Then: at least one cell has the ITM green background class
+    cy.get('[class*="bg-emerald"]', { timeout: 5000 }).should('exist')
   })
 
   // ── Scenario 22 ──────────────────────────────────────────────────────────────
@@ -244,6 +295,30 @@ describe('Hartije od vrednosti — S10–S24', () => {
     })
     cy.url().should('include', '/securities/')
 
+    // Intercept OPTIONS query with enough mock strikes so the ±3 filter can be verified.
+    // We need 7+ strikes (e.g. 300,310,...,360) around stockPrice to produce a non-trivial filter.
+    // Without mock, DB may have no options, making the test uninformative.
+    cy.intercept('GET', /\/securities(\?|$)/, (req) => {
+      if (/type=OPTION/.test(req.url)) {
+        const strikes = [200, 250, 300, 350, 400, 450, 500, 550, 600]
+        const options = strikes.flatMap((s) => [
+          {
+            id: 9000 + s, ticker: `MOCK${s}C`, name: `Mock Call ${s}`, type: 'OPTION',
+            optionType: 'CALL', strikePrice: s, settlementDate: '2026-06-20',
+            price: Math.max(1, 420 - s), changePercent: 0.5, volume: 100, openInterest: 500,
+          },
+          {
+            id: 9100 + s, ticker: `MOCK${s}P`, name: `Mock Put ${s}`, type: 'OPTION',
+            optionType: 'PUT', strikePrice: s, settlementDate: '2026-06-20',
+            price: Math.max(1, s - 420), changePercent: -0.5, volume: 80, openInterest: 400,
+          },
+        ])
+        req.reply({ statusCode: 200, body: { listings: options, totalPages: 1, totalElements: options.length } })
+      } else {
+        req.continue()
+      }
+    }).as('optionsData')
+
     // When: klikne "View Options →" da otvori stranicu opcija
     cy.contains('View Options', { timeout: 10000 }).click()
     cy.url().should('include', '/options')
@@ -251,28 +326,26 @@ describe('Hartije od vrednosti — S10–S24', () => {
     // Wait for page to finish loading (loading spinner disappears)
     cy.contains('Loading options', { timeout: 10000 }).should('not.exist')
 
-    // Settlement date table is visible by default (showDateTable = true).
-    // Need to click a date row to set selectedDate, which renders the strike filter input.
-    // Use $body.find() to check DOM without asserting existence (cy.get would time out if empty).
-    cy.get('body').then($body => {
-      const rows = $body.find('table tbody tr')
-      if (rows.length === 0) {
-        cy.log('No settlement dates available — verifying page structure only')
-        cy.url().should('include', '/options')
-        return
-      }
-      // When: klikne na prvi dostupni datum
-      cy.get('table tbody tr').first().click()
+    // Settlement date table is visible — click the mocked date to load the options table
+    cy.get('table tbody tr', { timeout: 5000 }).should('have.length.greaterThan', 0)
+    cy.get('table tbody tr').first().click()
 
-      // Then: pojavljuje se input za filtriranje strike vrednosti
-      cy.get('input[type="number"]', { timeout: 5000 }).should('exist')
+    // Then: pojavljuje se input za filtriranje strike vrednosti
+    cy.get('input[type="number"]', { timeout: 5000 }).should('exist')
 
-      // When: postavi filter na 3
-      cy.get('input[type="number"]').first().clear().type('3')
+    // When: postavi filter na 3
+    cy.get('input[type="number"]').first().clear().type('3')
+    cy.wait(400)
 
-      // Then: stranica ostaje funkcionalna
-      cy.get('body').should('exist')
-    })
+    // Then: footer prikazuje "N strikes shown" gde N ≤ 7 (3 ispod + ATM + 3 iznad)
+    // Napomena: cy.get('table tbody tr') ne može se koristiti jer StockOptionsPage koristi
+    // ugneždene <table> elemente (1 outer tr sadrži 2 nested table), što daje 3× više redova.
+    cy.contains(/\d+ strikes? shown/, { timeout: 5000 })
+      .invoke('text')
+      .then((text) => {
+        const n = parseInt(text)
+        expect(n).to.be.at.most(7)
+      })
   })
 
   // ── Scenario 23 ──────────────────────────────────────────────────────────────
@@ -296,10 +369,52 @@ describe('Hartije od vrednosti — S10–S24', () => {
     cy.get('table').should('exist')
   })
 
-  // ── Scenario 25 — skip ───────────────────────────────────────────────────────
+  // ── Scenario 25 ──────────────────────────────────────────────────────────────
 
-  it.skip('Scenario 25: Prikaz hartija sa nepoznatog exchange-a', () => {
-    // Skip: backend filtrira nepoznate exchange-e — ne može se testirati u UI.
+  it('Scenario 25: Hartije sa nepostojećim exchange-om se ne prikazuju', () => {
+    // Spec: "sistem učita hartije sa nepostojećim exchange-om → takve hartije se ne prikazuju"
+    // Backend filtrira ove hartije pre slanja; test verifikuje da nijedna hartija iz
+    // /securities nema exchange koji ne postoji u /stock-exchanges.
+    cy.request('POST', `${API_BASE}/login`, { email: ADMIN_EMAIL, password: ADMIN_PASS })
+      .then(({ body: auth }) => {
+        // Fetch valid exchanges and all securities in parallel
+        cy.request({
+          method: 'GET',
+          url: `${API_BASE}/api/stock-exchanges`,
+          headers: { Authorization: `Bearer ${auth.access_token}` },
+          failOnStatusCode: false,
+        }).then(({ body: exBody, status: exStatus }) => {
+          cy.request({
+            method: 'GET',
+            url: `${API_BASE}/securities`,
+            headers: { Authorization: `Bearer ${auth.access_token}` },
+            failOnStatusCode: false,
+          }).then(({ body: secBody, status: secStatus }) => {
+            if (exStatus !== 200 || secStatus !== 200) {
+              // API unreachable — can't cross-reference
+              expect(exStatus).to.be.oneOf([200, 404])
+              return
+            }
+
+            const exchanges = Array.isArray(exBody) ? exBody : exBody?.content ?? exBody?.exchanges ?? []
+            const securities = Array.isArray(secBody) ? secBody : secBody?.content ?? secBody?.listings ?? []
+
+            // Collect all valid MIC codes and acronyms from the exchanges list
+            const validMics = new Set(exchanges.map(e => e.micCode ?? e.mic_code).filter(Boolean))
+            const validAcros = new Set(exchanges.map(e => e.acronym).filter(Boolean))
+
+            // Then: every returned security belongs to a known exchange
+            securities.forEach((sec) => {
+              const mic = sec.exchangeMic ?? sec.exchange_mic ?? sec.mic_code
+              const acro = sec.exchangeAcronym ?? sec.exchange_acronym ?? sec.exchange
+              const knownMic = !mic || validMics.has(mic)
+              const knownAcro = !acro || validAcros.has(acro)
+              // At least one identifier is recognized (backend filters before returning)
+              expect(knownMic || knownAcro, `security ${sec.ticker} has unknown exchange`).to.be.true
+            })
+          })
+        })
+      })
   })
 
   // ── Scenario 24 ──────────────────────────────────────────────────────────────
