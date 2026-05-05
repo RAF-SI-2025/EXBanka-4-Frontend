@@ -59,6 +59,13 @@ import ClientListingDetailPage from './pages/client/ClientListingDetailPage'
 import ClientPortfolioPage from './pages/client/ClientPortfolioPage'
 import ClientCreateOrderPage from './pages/client/ClientCreateOrderPage'
 import TaxTrackingPage from './pages/tax/TaxTrackingPage'
+import OtcMarketPage from './pages/otc/OtcMarketPage'
+import OtcNegotiationsPage from './pages/otc/OtcNegotiationsPage'
+import OtcNegotiationDetailPage from './pages/otc/OtcNegotiationDetailPage'
+import OtcContractsPage from './pages/otc/OtcContractsPage'
+import FundsDiscoveryPage from './pages/investment/FundsDiscoveryPage'
+import CreateFundPage from './pages/investment/CreateFundPage'
+import FundDetailPage from './pages/investment/FundDetailPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 function App() {
@@ -101,6 +108,13 @@ function App() {
               <Route path="/securities" element={<SecuritiesPage />} />
               <Route path="/securities/:id" element={<ListingDetailPage />} />
               <Route path="/securities/:id/options" element={<StockOptionsPage />} />
+              <Route path="/otc/market"              element={<OtcMarketPage />} />
+              <Route path="/otc/negotiations"        element={<OtcNegotiationsPage />} />
+              <Route path="/otc/negotiations/:id"    element={<OtcNegotiationDetailPage />} />
+              <Route path="/otc/contracts"           element={<OtcContractsPage />} />
+              <Route path="/investment/funds"        element={<FundsDiscoveryPage />} />
+              <Route path="/investment/funds/new"    element={<CreateFundPage />} />
+              <Route path="/investment/funds/:id"    element={<FundDetailPage />} />
             </Route>
           </Route>
 
