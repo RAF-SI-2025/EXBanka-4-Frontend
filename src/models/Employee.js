@@ -10,6 +10,8 @@ export const PERMISSIONS = {
   canProcessTransactions:'Process Transactions',
   canManageEmployees:    'Manage Employees',
   canViewReports:        'View Reports',
+  isAgent:               'Agent',
+  isSupervisor:          'Supervisor',
 }
 
 export const DEFAULT_PERMISSIONS = {
@@ -20,6 +22,8 @@ export const DEFAULT_PERMISSIONS = {
   canProcessTransactions: false,
   canManageEmployees:     false,
   canViewReports:         false,
+  isAgent:                false,
+  isSupervisor:           false,
 }
 
 /**
@@ -72,8 +76,8 @@ export class Employee {
   }
 }
 
-// Maps frontend permission keys to their backend dozvole string equivalents.
-const DOZVOLE_MAP = {
+// Maps frontend permission keys to their backend JWT claim string equivalents.
+const PERMISSION_CLAIM_MAP = {
   isAdmin:                'ADMIN',
   canViewClients:         'READ',
   canCreateAccounts:      'WRITE',
@@ -81,23 +85,25 @@ const DOZVOLE_MAP = {
   canProcessTransactions: 'TRANSACTIONS',
   canManageEmployees:     'EMPLOYEES',
   canViewReports:         'REPORTS',
+  isAgent:                'AGENT',
+  isSupervisor:           'SUPERVISOR',
 }
 
 /**
- * Convert a dozvole string array (backend) to a permissions boolean object (frontend).
+ * Convert a permission claims array (from backend JWT) to a permissions boolean object (frontend).
  */
-export function permissionsFromDozvole(dozvole = []) {
-  const upper = dozvole.map((d) => d.toUpperCase())
+export function permissionsFromClaims(claims = []) {
+  const upper = claims.map((c) => c.toUpperCase())
   return Object.fromEntries(
-    Object.entries(DOZVOLE_MAP).map(([key, str]) => [key, upper.includes(str)])
+    Object.entries(PERMISSION_CLAIM_MAP).map(([key, str]) => [key, upper.includes(str)])
   )
 }
 
 /**
- * Convert a permissions boolean object (frontend) back to a dozvole string array (backend).
+ * Convert a permissions boolean object (frontend) back to a permission claims array (backend).
  */
-export function dozvoleFromPermissions(permissions = {}) {
-  return Object.entries(DOZVOLE_MAP)
+export function claimsFromPermissions(permissions = {}) {
+  return Object.entries(PERMISSION_CLAIM_MAP)
     .filter(([key]) => permissions[key])
     .map(([, str]) => str)
 }
@@ -122,7 +128,7 @@ export function employeeFromApi(data) {
     position:     data.position,
     department:   data.department,
     active:       data.active,
-    permissions:  permissionsFromDozvole(data.permissions),
+    permissions:  permissionsFromClaims(data.permissions),
     jmbg:         data.jmbg,
   })
 }

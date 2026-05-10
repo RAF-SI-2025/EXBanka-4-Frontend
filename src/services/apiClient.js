@@ -71,7 +71,8 @@ apiClient.interceptors.response.use(
 
     // Dispatch user-friendly error notifications for non-401 errors.
     if (status && status !== 401) {
-      const message = API_ERROR_MESSAGES[status] ?? 'An unexpected error occurred.'
+      const backendMessage = error.response?.data?.error
+      const message = backendMessage || API_ERROR_MESSAGES[status] || 'An unexpected error occurred.'
       dispatchApiError(status, message)
     }
 

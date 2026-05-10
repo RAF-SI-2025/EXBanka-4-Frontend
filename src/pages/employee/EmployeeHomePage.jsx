@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { useTheme } from '../../context/ThemeContext'
 import { useAuth } from '../../context/AuthContext'
+import Navbar from '../../components/Navbar'
+import { NAV_ITEMS } from '../../layouts/EmployeePortalLayout'
 
 const PERMISSION_META = {
   isAdmin: {
@@ -20,7 +22,7 @@ const PERMISSION_META = {
     description: 'Browse and search client profiles and account summaries.',
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-4.5 0 2.625 2.625 0 014.5 0z" />
       </svg>
     ),
     accent: 'violet',
@@ -84,127 +86,205 @@ const ACCENT = {
 
 function EmployeeHomePage() {
   useWindowTitle('AnkaBanka — Employee Portal')
-  const { dark } = useTheme()
-  const { user } = useAuth()
+  const { dark, toggle } = useTheme()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
-  const [blobsShifted, setBlobsShifted] = useState(false)
 
   useEffect(() => {
+    if (user) return
     const handleMouse = (e) => {
       const cx = window.innerWidth / 2
       const cy = window.innerHeight / 2
-      const dx = (e.clientX - cx) / cx
-      const dy = (e.clientY - cy) / cy
-      setOffset({ x: -dx * 45, y: -dy * 30 })
+      setOffset({ x: -((e.clientX - cx) / cx) * 45, y: -((e.clientY - cy) / cy) * 30 })
     }
     window.addEventListener('mousemove', handleMouse)
     return () => window.removeEventListener('mousemove', handleMouse)
-  }, [])
-
-  useEffect(() => {
-    if (!user) {
-      setBlobsShifted(false)
-      return
-    }
-    const t = setTimeout(() => setBlobsShifted(true), 60)
-    return () => clearTimeout(t)
   }, [user])
+
+  function handleLogout() {
+    logout()
+    navigate('/')
+  }
+
+  const isActive = (href, exact) =>
+    exact ? location.pathname === href : location.pathname.startsWith(href)
+
+  const visibleItems = NAV_ITEMS.filter(item => item.show(user?.permissions))
 
   const grantedPermissions = user
     ? Object.entries(user.permissions).filter(([, granted]) => granted)
     : []
 
-  return (
-    <div className="relative min-h-[680px] space-y-20">
-      {/* Blob container */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div
-          className="absolute w-[538px] h-[650px]"
-          style={{
-            top:    blobsShifted ? '-10%'  : '0',
-            left:   blobsShifted ? '10%'  : '38%',
-            transform: `translate(${offset.x}px, ${offset.y}px) rotate(18deg)`,
-            transition: 'top 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), left 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            background: dark
-              ? 'radial-gradient(ellipse at 50% 50%, rgba(126, 71, 255, 0.75) 0%, transparent 70%)'
-              : 'radial-gradient(ellipse at 50% 50%, rgba(138, 92, 246, 0.87) 0%, transparent 70%)',
-            filter: 'blur(64px)',
-          }}
-        />
-        <div
-          className="absolute w-[700px] h-[375px]"
-          style={{
-            top:    blobsShifted ? '55%' : '48px',
-            left:   blobsShifted ? '58%' : '30%',
-            transform: `translate(${offset.x * 0.55}px, ${offset.y * 0.55}px) rotate(-12deg)`,
-            transition: 'top 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94), left 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-            background: dark
-              ? 'radial-gradient(ellipse at 50% 50%, rgba(31, 132, 255, 0.9) 0%, transparent 70%)'
-              : 'radial-gradient(ellipse at 50% 50%, rgba(96, 165, 250, 0.88) 0%, transparent 70%)',
-            filter: 'blur(70px)',
-          }}
-        />
-      </div>
+  // ── Logged-in: full sidebar layout ──────────────────────────────────────────
+  if (user) {
+    return (
+      <div className="flex h-screen overflow-hidden bg-white dark:bg-slate-900">
 
-      {/* Hero */}
-      <section className="relative pt-8 pb-4">
-        <p className="section-label mb-6">Employee Portal</p>
-        <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-light text-slate-900 dark:text-white leading-tight mb-6">
-          AnkaBanka Internal
-        </h1>
-        <div className="gold-divider mx-0" />
-        {user ? (
-          <p className="text-slate-500 dark:text-slate-400 text-lg font-light max-w-lg mb-2 leading-relaxed">
-            Welcome back, <span className="text-slate-900 dark:text-white font-medium">{user.firstName}</span>.
-          </p>
-        ) : (
-          <>
+        {/* Sidebar */}
+        <aside className={`${sidebarOpen ? 'w-64' : 'w-16'} shrink-0 flex flex-col transition-[width] duration-500 ease-in-out overflow-hidden bg-slate-100 dark:bg-slate-950 border-r border-slate-100 dark:border-slate-800`}>
+          <div className="flex items-center justify-center h-16 border-b border-slate-100 dark:border-slate-800">
+            <button
+              onClick={() => setSidebarOpen(o => !o)}
+              className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors p-2"
+              aria-label="Toggle sidebar"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          <nav className="flex-1 py-4 overflow-y-auto">
+            {visibleItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                title={!sidebarOpen ? item.label : undefined}
+                className={`flex items-center gap-3 px-4 py-3 text-sm font-light transition-colors
+                  ${isActive(item.href, item.exact)
+                    ? 'text-violet-700 dark:text-white bg-violet-100 dark:bg-violet-600/25 border-r-2 border-violet-500'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
+                  }`}
+              >
+                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
+                </svg>
+                <span className={`whitespace-nowrap transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Right: topbar + content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <nav className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shrink-0">
+            <div className="flex items-center justify-between h-16 px-6">
+              <Link to="/" className="flex items-center gap-3">
+                <div className="w-7 h-7 border border-violet-500 dark:border-violet-400 flex items-center justify-center">
+                  <span className="text-violet-500 dark:text-violet-400 text-xs font-serif font-semibold">A</span>
+                </div>
+                <span className="text-slate-900 dark:text-white font-serif text-lg tracking-widest font-light">
+                  Anka<span className="text-violet-600 dark:text-violet-400">Banka</span>
+                </span>
+              </Link>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-slate-500 dark:text-slate-400 font-light hidden sm:block">
+                  Welcome back, <span className="text-slate-900 dark:text-white font-medium">{user.firstName} {user.lastName}</span>
+                </span>
+                <button onClick={toggle} aria-label="Toggle dark mode" className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
+                  {dark ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="px-5 py-2 border border-violet-600 dark:border-violet-400 text-violet-600 dark:text-violet-400 text-xs tracking-widest uppercase font-medium hover:bg-violet-600 dark:hover:bg-violet-500 hover:text-white transition-all duration-200"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </nav>
+
+          <main className="flex-1 overflow-auto">
+            <div className="max-w-5xl mx-auto px-6 py-10 w-full">
+              <p className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 mb-6">
+                Your access
+              </p>
+              {grantedPermissions.length === 0 ? (
+                <p className="text-sm text-slate-400 dark:text-slate-500">
+                  You have no permissions assigned. Contact an administrator.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {grantedPermissions.map(([key]) => {
+                    const meta = PERMISSION_META[key]
+                    if (!meta) return null
+                    const accentClass = ACCENT[meta.accent]
+                    return (
+                      <div
+                        key={key}
+                        className={`rounded-xl border p-5 flex gap-4 items-start ${accentClass}`}
+                      >
+                        <div className="mt-0.5 shrink-0">{meta.icon}</div>
+                        <div>
+                          <p className="text-sm font-semibold tracking-wide mb-1">{meta.label}</p>
+                          <p className="text-xs font-light leading-relaxed opacity-80">{meta.description}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Logged-out: landing page ─────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900">
+      <Navbar />
+      <main className="flex-1 container mx-auto px-6 py-16 max-w-7xl">
+        <div className="relative min-h-[680px] space-y-20">
+
+          {/* Blobs */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <div
+              className="absolute w-[538px] h-[650px]"
+              style={{
+                top: '-10%', left: '10%',
+                transform: `translate(${offset.x}px, ${offset.y}px) rotate(18deg)`,
+                transition: 'transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                background: dark
+                  ? 'radial-gradient(ellipse at 50% 50%, rgba(126, 71, 255, 0.75) 0%, transparent 70%)'
+                  : 'radial-gradient(ellipse at 50% 50%, rgba(138, 92, 246, 0.87) 0%, transparent 70%)',
+                filter: 'blur(64px)',
+              }}
+            />
+            <div
+              className="absolute w-[700px] h-[375px]"
+              style={{
+                top: '48px', left: '30%',
+                transform: `translate(${offset.x * 0.55}px, ${offset.y * 0.55}px) rotate(-12deg)`,
+                transition: 'transform 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                background: dark
+                  ? 'radial-gradient(ellipse at 50% 50%, rgba(31, 132, 255, 0.9) 0%, transparent 70%)'
+                  : 'radial-gradient(ellipse at 50% 50%, rgba(96, 165, 250, 0.88) 0%, transparent 70%)',
+                filter: 'blur(70px)',
+              }}
+            />
+          </div>
+
+          {/* Hero */}
+          <section className="relative pt-8 pb-4">
+            <p className="section-label mb-6">Employee Portal</p>
+            <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-light text-slate-900 dark:text-white leading-tight mb-6">
+              AnkaBanka Internal
+            </h1>
+            <div className="gold-divider mx-0" />
             <p className="text-slate-500 dark:text-slate-400 text-lg font-light max-w-lg mb-10 leading-relaxed">
               Internal tools and systems for AnkaBanka staff. Sign in with your employee credentials to continue.
             </p>
             <Link to="/login" className="btn-primary">
               Employee Login
             </Link>
-          </>
-        )}
-      </section>
+          </section>
 
-      {/* Permissions dashboard */}
-      {user && (
-        <section className="relative">
-          <p className="text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 mb-6">
-            Your access
-          </p>
-
-          {grantedPermissions.length === 0 ? (
-            <p className="text-sm text-slate-400 dark:text-slate-500">
-              You have no permissions assigned. Contact an administrator.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {grantedPermissions.map(([key]) => {
-                const meta = PERMISSION_META[key]
-                if (!meta) return null
-                const accentClass = ACCENT[meta.accent]
-                return (
-                  <div
-                    key={key}
-                    className={`rounded-xl border p-5 flex gap-4 items-start ${accentClass}`}
-                  >
-                    <div className="mt-0.5 shrink-0">
-                      {meta.icon}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold tracking-wide mb-1">{meta.label}</p>
-                      <p className="text-xs font-light leading-relaxed opacity-80">{meta.description}</p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </section>
-      )}
+        </div>
+      </main>
     </div>
   )
 }

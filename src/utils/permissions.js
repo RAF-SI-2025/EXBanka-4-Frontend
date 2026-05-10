@@ -22,6 +22,8 @@ export const PERM = Object.freeze({
   PROCESS_TRANSACTIONS: 'canProcessTransactions',
   MANAGE_EMPLOYEES:     'canManageEmployees',
   VIEW_REPORTS:         'canViewReports',
+  IS_AGENT:             'isAgent',
+  IS_SUPERVISOR:        'isSupervisor',
 })
 
 // ── Default permissions per role ──────────────────────────────────────────────

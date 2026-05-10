@@ -83,6 +83,7 @@ describe('Kreiranje i aktivacija zaposlenog — scenarios 6–10', () => {
     cy.get('input[name="lastName"]').type('Test')
     cy.get('input[name="email"]').type('marko@banka.rs') // already exists
     cy.get('input[name="username"]').type(`duplicate_${Date.now()}`)
+    cy.get('input[name="address"]').type('Test Street 1')
     cy.get('input[name="position"]').type('Agent')
     cy.get('input[name="department"]').type('IT')
     cy.get('input[name="jmbg"]').type('9999999999999')

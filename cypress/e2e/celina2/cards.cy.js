@@ -245,17 +245,17 @@ describe('Kartice — scenarios 27–32', () => {
     cy.visit(`/admin/accounts/${seedAccountId}`)
 
     // Cards section shows the blocked card
-    cy.contains('Cards').should('be.visible')
-    cy.contains('Blocked').should('be.visible')
+    cy.contains('Cards').scrollIntoView().should('be.visible')
+    cy.contains('Blocked').scrollIntoView().should('be.visible')
 
     // Click Unblock
-    cy.contains('Unblock').click()
+    cy.contains('Unblock').scrollIntoView().click()
 
     // Then: success toast contains "unblocked"
     cy.contains('unblocked', { timeout: 8000 }).should('be.visible')
 
     // And: status badge changes to Active
-    cy.contains('Active').should('be.visible')
+    cy.contains('Active').scrollIntoView().should('be.visible')
   })
 
   // ── Scenario 32 ──────────────────────────────────────────────────────────────

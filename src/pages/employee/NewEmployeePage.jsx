@@ -19,7 +19,7 @@ const EMPTY_FORM = {
   permissions: { ...DEFAULT_PERMISSIONS },
 }
 
-const REQUIRED = ['firstName', 'lastName', 'email', 'username', 'position', 'department']
+const REQUIRED = ['firstName', 'lastName', 'email', 'username', 'position', 'department', 'address']
 
 export default function NewEmployeePage() {
   useWindowTitle('New Employee | AnkaBanka Admin')
@@ -129,8 +129,8 @@ export default function NewEmployeePage() {
                   <input className="input-field" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} placeholder="+381..." />
                 </Field>
               </div>
-              <Field label="Address">
-                <input className="input-field" name="address" value={form.address} onChange={handleChange} placeholder="Street, City" />
+              <Field label="Address" required error={errors.address}>
+                <input className="input-field" name="address" value={form.address} onChange={handleChange} onBlur={handleBlur} placeholder="Street, City" />
               </Field>
             </FormSection>
 

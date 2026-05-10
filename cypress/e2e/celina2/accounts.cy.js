@@ -141,7 +141,7 @@ describe('Kreiranje računa — zaposleni', () => {
         cy.contains(accountNumber).click()
         cy.url().should('match', /\/admin\/accounts\/\d+/)
 
-        cy.contains('Cards').should('be.visible')
+        cy.contains('Cards').scrollIntoView().should('be.visible')
         cy.contains('No cards linked to this account.', { timeout: 10000 }).should('not.exist')
         cy.get('.font-mono').first().invoke('text').should('match', /\d{16}/)
       })
@@ -181,8 +181,8 @@ describe('Kreiranje računa — zaposleni', () => {
         cy.contains(accountNumber).click()
         cy.url().should('match', /\/admin\/accounts\/\d+/)
 
-        cy.contains('active', { timeout: 10000 }).should('be.visible')
-        cy.contains('Business').should('be.visible')
+        cy.contains('active', { timeout: 10000 }).scrollIntoView().should('be.visible')
+        cy.contains('Business').scrollIntoView().should('be.visible')
       })
   })
 })

@@ -6,7 +6,7 @@
  */
 
 import { apiClient } from './apiClient'
-import { dozvoleFromPermissions } from '../models/Employee'
+import { claimsFromPermissions } from '../models/Employee'
 
 export const employeeService = {
   /**
@@ -82,7 +82,7 @@ export const employeeService = {
       position:      form.position,
       department:    form.department,
       active:        form.active,
-      permissions:   dozvoleFromPermissions(form.permissions),
+      permissions:   claimsFromPermissions(form.permissions),
       jmbg:          form.jmbg,
     }
     const { data } = await apiClient.put(`/employees/${id}`, body)

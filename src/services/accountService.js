@@ -45,4 +45,9 @@ export const accountService = {
   async deleteAccount(id) {
     await apiClient.delete(`/api/accounts/${id}`)
   },
+
+  async getBankAccounts() {
+    const { data } = await apiClient.get('/api/bank-accounts')
+    return data
+  },
 }

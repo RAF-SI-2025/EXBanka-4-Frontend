@@ -39,7 +39,7 @@ function Navbar() {
           {/* Desktop links */}
           <div className="hidden md:flex items-center gap-8">
             <NavLink to="/" className={linkClass} end>Home</NavLink>
-            {user?.roles?.includes('ADMIN') && (
+            {user?.permissions?.canManageEmployees && (
               <NavLink to="/admin/employees" className={linkClass}>Employees</NavLink>
             )}
             {user?.permissions?.canViewClients && (
@@ -48,14 +48,35 @@ function Navbar() {
             {user?.permissions?.canViewClients && (
               <NavLink to="/admin/accounts" className={linkClass}>Accounts</NavLink>
             )}
-            {user && (
+            {user?.permissions?.isAdmin && (
               <NavLink to="/admin/bank-accounts" className={linkClass}>Bank Accounts</NavLink>
             )}
-            {user && (
+            {user?.permissions?.canApproveLoans && (
               <NavLink to="/admin/loans/applications" className={linkClass}>Loan Applications</NavLink>
             )}
-            {user && (
+            {user?.permissions?.canApproveLoans && (
               <NavLink to="/admin/loans" className={linkClass}>Loans</NavLink>
+            )}
+            {user?.permissions?.isSupervisor && (
+              <NavLink to="/admin/actuaries" className={linkClass}>Actuaries</NavLink>
+            )}
+            {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
+              <NavLink to="/admin/stock-exchanges" className={linkClass}>Stock Exchanges</NavLink>
+            )}
+            {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
+              <NavLink to="/securities" className={linkClass}>Securities</NavLink>
+            )}
+            {user?.permissions?.isSupervisor && (
+              <NavLink to="/admin/orders" className={linkClass}>Orders</NavLink>
+            )}
+            {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
+              <NavLink to="/portfolio" className={linkClass}>Portfolio</NavLink>
+            )}
+            {(user?.permissions?.isAgent || user?.permissions?.isSupervisor || user?.permissions?.isAdmin) && (
+              <NavLink to="/otc/negotiations" className={linkClass}>OTC Trading</NavLink>
+            )}
+            {user && (
+              <NavLink to="/investment/funds" className={linkClass}>Investment Funds</NavLink>
             )}
           </div>
 
@@ -113,7 +134,7 @@ function Navbar() {
         {menuOpen && (
           <div className="md:hidden border-t border-slate-100 dark:border-slate-800 py-4 flex flex-col gap-4">
             <NavLink to="/" className={linkClass} end onClick={() => setMenuOpen(false)}>Home</NavLink>
-            {user?.roles?.includes('ADMIN') && (
+            {user?.permissions?.canManageEmployees && (
               <NavLink to="/admin/employees" className={linkClass} onClick={() => setMenuOpen(false)}>Employees</NavLink>
             )}
             {user?.permissions?.canViewClients && (
@@ -122,14 +143,35 @@ function Navbar() {
             {user?.permissions?.canViewClients && (
               <NavLink to="/admin/accounts" className={linkClass} onClick={() => setMenuOpen(false)}>Accounts</NavLink>
             )}
-            {user && (
+            {user?.permissions?.isAdmin && (
               <NavLink to="/admin/bank-accounts" className={linkClass} onClick={() => setMenuOpen(false)}>Bank Accounts</NavLink>
             )}
-            {user && (
+            {user?.permissions?.canApproveLoans && (
               <NavLink to="/admin/loans/applications" className={linkClass} onClick={() => setMenuOpen(false)}>Loan Applications</NavLink>
             )}
-            {user && (
+            {user?.permissions?.canApproveLoans && (
               <NavLink to="/admin/loans" className={linkClass} onClick={() => setMenuOpen(false)}>Loans</NavLink>
+            )}
+            {user?.permissions?.isSupervisor && (
+              <NavLink to="/admin/actuaries" className={linkClass} onClick={() => setMenuOpen(false)}>Actuaries</NavLink>
+            )}
+            {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
+              <NavLink to="/admin/stock-exchanges" className={linkClass} onClick={() => setMenuOpen(false)}>Stock Exchanges</NavLink>
+            )}
+            {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
+              <NavLink to="/securities" className={linkClass} onClick={() => setMenuOpen(false)}>Securities</NavLink>
+            )}
+            {user?.permissions?.isSupervisor && (
+              <NavLink to="/admin/orders" className={linkClass} onClick={() => setMenuOpen(false)}>Orders</NavLink>
+            )}
+            {(user?.permissions?.isAgent || user?.permissions?.isSupervisor) && (
+              <NavLink to="/portfolio" className={linkClass} onClick={() => setMenuOpen(false)}>Portfolio</NavLink>
+            )}
+            {(user?.permissions?.isAgent || user?.permissions?.isSupervisor || user?.permissions?.isAdmin) && (
+              <NavLink to="/otc/negotiations" className={linkClass} onClick={() => setMenuOpen(false)}>OTC Trading</NavLink>
+            )}
+            {user && (
+              <NavLink to="/investment/funds" className={linkClass} onClick={() => setMenuOpen(false)}>Investment Funds</NavLink>
             )}
             <div className="flex items-center gap-4">
               <button

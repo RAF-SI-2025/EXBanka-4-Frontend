@@ -73,6 +73,19 @@ describe('Plaćanja — scenarios 9–16', () => {
             accountName:    'Cypress Payment Test',
           },
         })
+
+        cy.request({
+          method:  'POST',
+          url:     `${API_BASE}/api/accounts/create`,
+          headers: { Authorization: `Bearer ${adminToken}` },
+          body: {
+            clientId:       client.id,
+            accountType:    'personal',
+            currencyCode:   'EUR',
+            initialBalance: 1000,
+            accountName:    'Cypress Foreign Payment Test',
+          },
+        })
       })
     })
   })
