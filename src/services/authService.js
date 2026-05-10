@@ -98,9 +98,14 @@ export const authService = {
 
   /**
    * Log out the current user.
-   * Clears tokens locally (no backend logout endpoint).
+   * Notifies the backend to revoke the token, then clears local storage.
    */
   async logout() {
+    try {
+      await apiClient.post('/auth/logout')
+    } catch (_) {
+      // best-effort — clear locally regardless
+    }
     tokenService.clear()
   },
 

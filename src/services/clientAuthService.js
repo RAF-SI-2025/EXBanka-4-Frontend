@@ -34,6 +34,16 @@ export const clientAuthService = {
   },
 
   async logout() {
+    try {
+      const token = clientTokenService.getAccessToken()
+      if (token) {
+        await axios.post(`${BASE_URL}/auth/logout`, null, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      }
+    } catch (_) {
+      // best-effort
+    }
     clientTokenService.clear()
   },
 
