@@ -68,14 +68,18 @@ export default function OtcNegotiationDetailPage() {
     ((neg.status === 'PENDING_SELLER' && neg.sellerId === userId) ||
      (neg.status === 'PENDING_BUYER'  && neg.buyerId  === userId))
 
+  function apiError(err, fallback) {
+    return err?.response?.data?.error || fallback
+  }
+
   async function handleAccept() {
     setActing(true)
     setActionError(null)
     try {
       await otcService.acceptNegotiation(id)
       navigate('/otc/negotiations')
-    } catch {
-      setActionError('Failed to accept negotiation.')
+    } catch (err) {
+      setActionError(apiError(err, 'Failed to accept negotiation.'))
     } finally {
       setActing(false)
       setShowAcceptConfirm(false)
@@ -88,8 +92,8 @@ export default function OtcNegotiationDetailPage() {
     try {
       await otcService.rejectNegotiation(id)
       navigate('/otc/negotiations')
-    } catch {
-      setActionError('Failed to reject negotiation.')
+    } catch (err) {
+      setActionError(apiError(err, 'Failed to reject negotiation.'))
     } finally {
       setActing(false)
     }
@@ -111,8 +115,8 @@ export default function OtcNegotiationDetailPage() {
         premium:       counterPremium ? Number(counterPremium) : 0,
       })
       navigate('/otc/negotiations')
-    } catch {
-      setActionError('Failed to submit counter-offer.')
+    } catch (err) {
+      setActionError(apiError(err, 'Failed to submit counter-offer.'))
     } finally {
       setActing(false)
     }
@@ -168,7 +172,7 @@ export default function OtcNegotiationDetailPage() {
                 </Field>
 
                 <Field label="Settlement Date">
-                  {neg.settlementDate ?? '—'}
+                  {fmtDate(neg.settlementDate)}
                 </Field>
 
                 <Field label="Last Modified">
@@ -283,6 +287,7 @@ export default function OtcNegotiationDetailPage() {
                           <input
                             type="date"
                             value={counterDate}
+                            min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
                             onChange={e => setCounterDate(e.target.value)}
                             className="input-field w-full"
                           />

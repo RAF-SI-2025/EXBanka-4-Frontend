@@ -31,8 +31,8 @@ function OfferModal({ item, onClose, onSubmit }) {
         currency:       item.currency,
       })
       onClose()
-    } catch {
-      setError('Failed to submit offer. Please try again.')
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Failed to submit offer. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -106,6 +106,7 @@ function OfferModal({ item, onClose, onSubmit }) {
             <input
               type="date"
               value={settlementDate}
+              min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
               onChange={e => setSettlementDate(e.target.value)}
               className="input-field w-full"
             />
