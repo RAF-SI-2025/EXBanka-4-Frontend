@@ -4,7 +4,7 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import { useAuth } from '../../context/AuthContext'
 import { otcService } from '../../services/otcService'
 import { securitiesService } from '../../services/securitiesService'
-import { fmt } from '../../utils/formatting'
+import { fmt, fmtDate, fmtDateTime } from '../../utils/formatting'
 
 const SORT_COLS = ['pricePerStock', 'settlementDate', 'lastModified']
 
@@ -175,7 +175,7 @@ export default function OtcNegotiationsPage() {
                             {fmt(neg.premium)}
                           </td>
                           <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">
-                            <div>{neg.lastModified ? new Date(neg.lastModified).toLocaleString() : '—'}</div>
+                            <div>{fmtDateTime(neg.lastModified)}</div>
                             {neg.modifiedByName && (
                               <div className="text-slate-400 dark:text-slate-500">{neg.modifiedByName}</div>
                             )}

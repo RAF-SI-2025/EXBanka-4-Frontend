@@ -3,6 +3,14 @@ import { actuaryInfoFromApi } from '../models/ActuaryInfo'
 
 export const actuaryService = {
   /**
+   * Fetch all active supervisors (for fund manager selection).
+   */
+  async getSupervisors() {
+    const { data } = await apiClient.get('/api/supervisors')
+    return data
+  },
+
+  /**
    * Fetch all agents with their actuary limit info.
    */
   async getActuaries() {

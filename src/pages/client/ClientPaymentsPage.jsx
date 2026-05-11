@@ -5,7 +5,7 @@ import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useClientPayments } from '../../context/ClientPaymentsContext'
 import { useClientAccounts } from '../../context/ClientAccountsContext'
 import { PAYMENT_STATUSES, PAYMENT_STATUS_STYLES } from '../../models/Payment'
-import { fmt } from '../../utils/formatting'
+import { fmt, fmtDateTime } from '../../utils/formatting'
 import Spinner from '../../components/Spinner'
 
 const STATUS_OPTIONS = ['all', ...PAYMENT_STATUSES]
@@ -160,7 +160,7 @@ export default function ClientPaymentsPage() {
                       const otherParty = isOutgoing ? (p.recipient || p.recipientAccount) : p.fromAccount
                       const label = p.purpose || otherParty
                       return <>
-                        <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400 font-light whitespace-nowrap">{new Date(p.dateTime).toLocaleString('sr-RS')}</td>
+                        <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400 font-light whitespace-nowrap">{fmtDateTime(p.dateTime)}</td>
                         <td className="px-5 py-3.5 text-sm text-slate-900 dark:text-white font-light">{label}</td>
                         <td className={`px-5 py-3.5 text-sm font-medium text-right whitespace-nowrap ${isOutgoing ? 'text-red-500 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                           {isOutgoing ? '-' : '+'}{fmt(Math.abs(p.amount))}

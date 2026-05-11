@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { clientOtcService } from '../../services/clientOtcService'
-import { fmt } from '../../utils/formatting'
+import { fmt, fmtDate } from '../../utils/formatting'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 
 const TABS = [
@@ -190,7 +190,7 @@ export default function ClientOtcContractsPage() {
                         <td className="px-4 py-3 text-slate-700 dark:text-slate-300 tabular-nums">{c.amount}</td>
                         <td className="px-4 py-3 text-slate-700 dark:text-slate-300 tabular-nums">{fmt(c.strikePrice)}</td>
                         <td className="px-4 py-3 text-slate-700 dark:text-slate-300 tabular-nums">{fmt(c.premium)}</td>
-                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">{c.settlementDate ?? '—'}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">{fmtDate(c.settlementDate)}</td>
                         <td className="px-4 py-3 text-slate-700 dark:text-slate-300 text-xs">
                           <div>{c.sellerName ?? '—'}</div>
                         </td>
