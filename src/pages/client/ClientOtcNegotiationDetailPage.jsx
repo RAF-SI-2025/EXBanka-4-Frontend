@@ -4,7 +4,7 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import { useClientAuth } from '../../context/ClientAuthContext'
 import { clientOtcService } from '../../services/clientOtcService'
 import { clientSecuritiesService } from '../../services/clientSecuritiesService'
-import { fmt } from '../../utils/formatting'
+import { fmt, fmtDate, fmtDateTime } from '../../utils/formatting'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 
 function getPriceColor(price, market) {
@@ -69,14 +69,20 @@ export default function ClientOtcNegotiationDetailPage() {
     ((neg.status === 'PENDING_SELLER' && neg.sellerId === userId) ||
      (neg.status === 'PENDING_BUYER'  && neg.buyerId  === userId))
 
+  const [accepted, setAccepted] = useState(false)
+
+  function apiError(err, fallback) {
+    return err?.response?.data?.error || fallback
+  }
+
   async function handleAccept() {
     setActing(true)
     setActionError(null)
     try {
       await clientOtcService.acceptNegotiation(id)
-      navigate('/client/otc/negotiations')
-    } catch {
-      setActionError('Failed to accept negotiation.')
+      setAccepted(true)
+    } catch (err) {
+      setActionError(apiError(err, 'Failed to accept negotiation.'))
     } finally {
       setActing(false)
       setShowAcceptConfirm(false)
@@ -89,8 +95,8 @@ export default function ClientOtcNegotiationDetailPage() {
     try {
       await clientOtcService.rejectNegotiation(id)
       navigate('/client/otc/negotiations')
-    } catch {
-      setActionError('Failed to reject negotiation.')
+    } catch (err) {
+      setActionError(apiError(err, 'Failed to reject negotiation.'))
     } finally {
       setActing(false)
     }
@@ -112,8 +118,8 @@ export default function ClientOtcNegotiationDetailPage() {
         premium:        counterPremium ? Number(counterPremium) : 0,
       })
       navigate('/client/otc/negotiations')
-    } catch {
-      setActionError('Failed to submit counter-offer.')
+    } catch (err) {
+      setActionError(apiError(err, 'Failed to submit counter-offer.'))
     } finally {
       setActing(false)
     }
@@ -134,6 +140,30 @@ export default function ClientOtcNegotiationDetailPage() {
         <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-4">Client Portal</p>
         <h1 className="font-serif text-4xl font-light text-slate-900 dark:text-white mb-3">Negotiation Detail</h1>
         <div className="w-10 h-px bg-violet-500 dark:bg-violet-400 mb-8" />
+
+        {accepted && neg && (
+          <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl p-6 mb-6">
+            <p className="text-emerald-700 dark:text-emerald-300 font-medium text-sm mb-1">Negotiation accepted.</p>
+            {neg.buyerId === userId ? (
+              <>
+                <p className="text-emerald-600 dark:text-emerald-400 text-sm mb-3">
+                  A contract has been created. You need to <strong>exercise</strong> it to receive the shares —
+                  go to <strong>OTC Contracts</strong> and click Exercise before the settlement date ({fmtDate(neg.settlementDate)}).
+                </p>
+                <button
+                  onClick={() => navigate('/client/otc/contracts')}
+                  className="btn-primary text-sm px-4 py-2"
+                >
+                  Go to OTC Contracts
+                </button>
+              </>
+            ) : (
+              <p className="text-emerald-600 dark:text-emerald-400 text-sm">
+                Waiting for the buyer to exercise the contract before the settlement date ({fmtDate(neg.settlementDate)}).
+              </p>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <p className="text-slate-500 dark:text-slate-400 text-sm">Loading…</p>
@@ -167,11 +197,11 @@ export default function ClientOtcNegotiationDetailPage() {
                 </Field>
 
                 <Field label="Settlement Date">
-                  {neg.settlementDate ?? '—'}
+                  {fmtDate(neg.settlementDate)}
                 </Field>
 
                 <Field label="Last Modified">
-                  <div>{neg.lastModified ? new Date(neg.lastModified).toLocaleString() : '—'}</div>
+                  <div>{fmtDateTime(neg.lastModified)}</div>
                   {neg.modifiedByName && (
                     <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{neg.modifiedByName}</div>
                   )}
@@ -189,7 +219,7 @@ export default function ClientOtcNegotiationDetailPage() {
               </div>
             </div>
 
-            {isMyTurn && (
+            {isMyTurn && !accepted && (
               <div className="space-y-4">
                 {actionError && (
                   <p className="text-red-500 text-xs">{actionError}</p>
@@ -278,6 +308,7 @@ export default function ClientOtcNegotiationDetailPage() {
                           <input
                             type="date"
                             value={counterDate}
+                            min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
                             onChange={e => setCounterDate(e.target.value)}
                             className="input-field w-full"
                           />

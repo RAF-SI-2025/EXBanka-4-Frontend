@@ -6,7 +6,7 @@ import { useClientAuth } from '../../context/ClientAuthContext'
 import { useClientAccounts } from '../../context/ClientAccountsContext'
 import { useClientPayments } from '../../context/ClientPaymentsContext'
 import { NAV_ITEMS } from '../../layouts/ClientPortalLayout'
-import { fmt } from '../../utils/formatting'
+import { fmt, fmtDate } from '../../utils/formatting'
 import { useRecipients } from '../../context/RecipientsContext'
 import { exchangeService } from '../../services/exchangeService'
 
@@ -398,7 +398,7 @@ export default function ClientHomePage() {
                               const otherParty = isOutgoing ? (p.recipient || p.recipientAccount) : p.fromAccount
                               return <>
                                 <p className="text-sm text-slate-700 dark:text-slate-300 font-light truncate">{p.purpose || otherParty}</p>
-                                <p className="text-xs text-slate-400 dark:text-slate-500">{new Date(p.dateTime).toLocaleDateString('sr-RS')}</p>
+                                <p className="text-xs text-slate-400 dark:text-slate-500">{fmtDate(p.dateTime)}</p>
                               </>
                             })()}
                           </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { otcService } from '../../services/otcService'
-import { fmt } from '../../utils/formatting'
+import { fmt, fmtDateTime } from '../../utils/formatting'
 
 function OfferModal({ item, onClose, onSubmit }) {
   const [quantity,       setQuantity]       = useState('')
@@ -219,7 +219,7 @@ export default function OtcMarketPage() {
                           {fmt(item.pricePerStock)} {item.currency && <span className="text-xs text-slate-400">{item.currency}</span>}
                         </td>
                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">
-                          {item.lastUpdated ? new Date(item.lastUpdated).toLocaleString() : '—'}
+                          {fmtDateTime(item.lastUpdated)}
                         </td>
                         <td className="px-4 py-3 text-slate-700 dark:text-slate-300 text-xs">
                           <div>{item.ownerName ?? '—'}</div>

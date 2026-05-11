@@ -4,7 +4,7 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import { useAuth } from '../../context/AuthContext'
 import { otcService } from '../../services/otcService'
 import { securitiesService } from '../../services/securitiesService'
-import { fmt } from '../../utils/formatting'
+import { fmt, fmtDate, fmtDateTime } from '../../utils/formatting'
 
 function getPriceColor(price, market) {
   if (!market) return 'text-slate-700 dark:text-slate-300'
@@ -172,7 +172,7 @@ export default function OtcNegotiationDetailPage() {
                 </Field>
 
                 <Field label="Last Modified">
-                  <div>{neg.lastModified ? new Date(neg.lastModified).toLocaleString() : '—'}</div>
+                  <div>{fmtDateTime(neg.lastModified)}</div>
                   {neg.modifiedByName && (
                     <div className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{neg.modifiedByName}</div>
                   )}

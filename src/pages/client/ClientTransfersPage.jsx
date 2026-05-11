@@ -4,7 +4,7 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 import { useClientAccounts } from '../../context/ClientAccountsContext'
 import { transferService } from '../../services/transferService'
-import { fmt } from '../../utils/formatting'
+import { fmt, fmtDateTime } from '../../utils/formatting'
 import { useApiError } from '../../context/ApiErrorContext'
 
 const EMPTY_FORM = {
@@ -305,7 +305,7 @@ export default function ClientTransfersPage() {
                       className={`${i !== history.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''}`}
                     >
                       <td className="px-5 py-3.5 text-sm text-slate-500 dark:text-slate-400 font-light whitespace-nowrap">
-                        {new Date(t.timestamp).toLocaleString('sr-RS')}
+                        {fmtDateTime(t.timestamp)}
                       </td>
                       <td className="px-5 py-3.5 text-sm text-slate-700 dark:text-slate-300 font-light">{accountNameByNumber(t.fromAccount)}</td>
                       <td className="px-5 py-3.5 text-sm text-slate-700 dark:text-slate-300 font-light">{accountNameByNumber(t.toAccount)}</td>

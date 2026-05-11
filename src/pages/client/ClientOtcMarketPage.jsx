@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { clientOtcService } from '../../services/clientOtcService'
-import { fmt } from '../../utils/formatting'
+import { fmt, fmtDateTime } from '../../utils/formatting'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
 
 function OfferModal({ item, onClose, onSubmit }) {
@@ -32,8 +33,8 @@ function OfferModal({ item, onClose, onSubmit }) {
         currency:       item.currency,
       })
       onClose()
-    } catch {
-      setError('Failed to submit offer. Please try again.')
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Failed to submit offer. Please try again.')
     } finally {
       setSubmitting(false)
     }
@@ -107,6 +108,7 @@ function OfferModal({ item, onClose, onSubmit }) {
             <input
               type="date"
               value={settlementDate}
+              min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
               onChange={e => setSettlementDate(e.target.value)}
               className="input-field w-full"
             />
@@ -138,6 +140,7 @@ function OfferModal({ item, onClose, onSubmit }) {
 
 export default function ClientOtcMarketPage() {
   useWindowTitle('OTC Market | AnkaBanka')
+  const navigate = useNavigate()
 
   const [items,      setItems]      = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -155,6 +158,7 @@ export default function ClientOtcMarketPage() {
 
   async function handleOffer(payload) {
     await clientOtcService.createNegotiation(payload)
+    navigate('/client/otc/negotiations')
   }
 
   function thClass() {
@@ -219,7 +223,7 @@ export default function ClientOtcMarketPage() {
                           {fmt(item.pricePerStock)} {item.currency && <span className="text-xs text-slate-400">{item.currency}</span>}
                         </td>
                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">
-                          {item.lastUpdated ? new Date(item.lastUpdated).toLocaleString() : '—'}
+                          {fmtDateTime(item.lastUpdated)}
                         </td>
                         <td className="px-4 py-3 text-slate-700 dark:text-slate-300 text-xs">
                           <div>{item.ownerName ?? '—'}</div>

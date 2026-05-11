@@ -6,7 +6,7 @@ import { accountService } from '../../services/accountService'
 import { employeeCardService } from '../../services/cardService'
 import { BankAccount, formatAccountType } from '../../models/BankAccount'
 import { Card as CardModel } from '../../models/Card'
-import { fmt } from '../../utils/formatting'
+import { fmt, fmtDate } from '../../utils/formatting'
 import Spinner from '../../components/Spinner'
 import CardBrand from '../../components/CardBrand'
 import CardDetailModal from '../../components/CardDetailModal'
@@ -210,8 +210,8 @@ export default function AccountDetailPage() {
           {account.maintenanceFee > 0 && (
             <Row label="Maintenance Fee" value={fmt(account.maintenanceFee, account.currency) + ' / month'} />
           )}
-          {account.createdAt && <Row label="Created"  value={new Date(account.createdAt).toLocaleDateString('sr-RS')} />}
-          {account.expiresAt && <Row label="Expires"  value={new Date(account.expiresAt).toLocaleDateString('sr-RS')} />}
+          {account.createdAt && <Row label="Created"  value={fmtDate(account.createdAt)} />}
+          {account.expiresAt && <Row label="Expires"  value={fmtDate(account.expiresAt)} />}
         </Card>
 
         {/* Balance */}

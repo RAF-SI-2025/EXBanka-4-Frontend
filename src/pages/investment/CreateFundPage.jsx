@@ -10,7 +10,7 @@ export default function CreateFundPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  const [actuaries, setActuaries] = useState([])
+  const [supervisors, setSupervisors] = useState([])
   const [form, setForm] = useState({ name: '', description: '', minimumContribution: '', managerId: '' })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -22,7 +22,7 @@ export default function CreateFundPage() {
   }, [user, navigate])
 
   useEffect(() => {
-    actuaryService.getActuaries().then(setActuaries).catch(() => {})
+    actuaryService.getSupervisors().then(setSupervisors).catch(() => {})
   }, [])
 
   function handleChange(e) {
@@ -124,9 +124,9 @@ export default function CreateFundPage() {
               className={`input-field appearance-none ${errors.managerId ? 'input-error' : ''}`}
             >
               <option value="">Select a manager</option>
-              {actuaries.map((a) => (
-                <option key={a.employeeId} value={a.employeeId}>
-                  {a.fullName} — {a.position}
+              {supervisors.map((s) => (
+                <option key={s.employee_id} value={s.employee_id}>
+                  {s.first_name} {s.last_name} — {s.position}
                 </option>
               ))}
             </select>
