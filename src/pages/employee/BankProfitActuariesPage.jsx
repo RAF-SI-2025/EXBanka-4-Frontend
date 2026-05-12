@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink, Navigate } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { usePermission } from '../../hooks/usePermission'
-import { actuaryService } from '../../services/actuaryService'
+import { bankProfitService } from '../../services/bankProfitService'
 import { fmt } from '../../utils/formatting'
 
 const POSITION_STYLES = {
@@ -21,15 +21,23 @@ export default function BankProfitActuariesPage() {
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState(false)
   const [sortAsc,      setSortAsc]      = useState(false)
+  const [search,       setSearch]       = useState('')
 
   useEffect(() => {
-    actuaryService.getActuaryPerformances()
+    bankProfitService.getActuaryPerformances()
       .then(data => setPerformances(data))
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [])
 
-  const sorted = [...performances].sort((a, b) =>
+  const q = search.trim().toLowerCase()
+  const filtered = q
+    ? performances.filter(p =>
+        `${p.firstName} ${p.lastName}`.toLowerCase().includes(q)
+      )
+    : performances
+
+  const sorted = [...filtered].sort((a, b) =>
     sortAsc ? a.profit - b.profit : b.profit - a.profit
   )
 
@@ -57,6 +65,17 @@ export default function BankProfitActuariesPage() {
           <NavLink to="/admin/bank-profit/fund-positions" className={tabClass}>
             Fund Positions
           </NavLink>
+        </div>
+
+        {/* Search */}
+        <div className="mb-4">
+          <input
+            type="text"
+            className="input-field w-full max-w-sm"
+            placeholder="Search by name…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </div>
 
         {/* Table */}
@@ -88,7 +107,7 @@ export default function BankProfitActuariesPage() {
                   {sorted.length === 0 ? (
                     <tr>
                       <td colSpan={3} className="px-4 py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
-                        No actuary performance data available.
+                        No actuaries found.
                       </td>
                     </tr>
                   ) : (
@@ -121,9 +140,11 @@ export default function BankProfitActuariesPage() {
               </table>
             </div>
           )}
-          {!loading && !error && sorted.length > 0 && (
+          {!loading && !error && performances.length > 0 && (
             <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 dark:text-slate-500">
-              {sorted.length} actuar{sorted.length !== 1 ? 'ies' : 'y'}
+              {sorted.length === performances.length
+                ? `${performances.length} actuar${performances.length !== 1 ? 'ies' : 'y'}`
+                : `${sorted.length} of ${performances.length} actuaries`}
             </div>
           )}
         </div>

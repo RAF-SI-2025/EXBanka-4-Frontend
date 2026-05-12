@@ -3,6 +3,7 @@ import { Link, NavLink, Navigate } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { usePermission } from '../../hooks/usePermission'
 import { bankProfitService } from '../../services/bankProfitService'
+import { fundService } from '../../services/fundService'
 import { accountService } from '../../services/accountService'
 import { fmt } from '../../utils/formatting'
 
@@ -195,8 +196,25 @@ export default function BankProfitFundPositionsPage() {
     setLoading(true)
     setError(false)
     try {
-      const data = await bankProfitService.getBankFundPositions()
-      setPositions(data)
+      const [funds, bankPositions] = await Promise.all([
+        fundService.getFunds(),
+        bankProfitService.getBankFundPositions(),
+      ])
+      const posMap = new Map(bankPositions.map(p => [p.fundId, p]))
+      const rows = (Array.isArray(funds) ? funds : [])
+        .filter(f => f.active)
+        .map(f => {
+          const pos = posMap.get(f.id)
+          return {
+            fundId:           f.id,
+            fundName:         f.name,
+            managerName:      f.managerName ?? pos?.managerName ?? '—',
+            bankSharePercent: pos?.bankSharePercent ?? 0,
+            bankShareRSD:     pos?.bankShareRSD     ?? 0,
+            profitRSD:        pos?.profitRSD        ?? 0,
+          }
+        })
+      setPositions(rows)
     } catch {
       setError(true)
     } finally {
