@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate, Navigate } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { usePermission } from '../../hooks/usePermission'
+import { useAuth } from '../../context/AuthContext'
 import { securitiesService } from '../../services/securitiesService'
 import { stockExchangeService } from '../../services/stockExchangeService'
 import { orderService } from '../../services/orderService'
+import { fundService } from '../../services/fundService'
 import { apiClient } from '../../services/apiClient'
 import { fmt } from '../../utils/formatting'
 
@@ -31,7 +33,9 @@ function orderTypeLabel(orderType, isAon, isMargin) {
 
 export default function CreateOrderPage() {
   useWindowTitle('New Order | AnkaBanka')
-  const { canAny } = usePermission()
+  const { canAny, can } = usePermission()
+  const { user } = useAuth()
+  const isSupervisor = can('isSupervisor')
   const [searchParams] = useSearchParams()
   const navigate       = useNavigate()
 
@@ -52,6 +56,12 @@ export default function CreateOrderPage() {
   const [isAon,      setIsAon]      = useState(false)
   const [isMargin,   setIsMargin]   = useState(false)
   const [accountId,  setAccountId]  = useState('')
+
+  // Supervisor fund selection
+  const [buyFor,       setBuyFor]       = useState('bank')
+  const [funds,        setFunds]        = useState([])
+  const [fundId,       setFundId]       = useState('')
+  const [loadingFunds, setLoadingFunds] = useState(false)
 
   const [exchangeStatus, setExchangeStatus] = useState(null)
 
@@ -83,6 +93,19 @@ export default function CreateOrderPage() {
         // accounts failed — page still loads, user just won't have a pre-selected account
       } finally {
         setLoadingInit(false)
+      }
+
+      if (isSupervisor && user?.id) {
+        setLoadingFunds(true)
+        try {
+          const managed = await fundService.getManagedFunds(user.id)
+          setFunds(managed)
+          if (managed.length > 0) setFundId(String(managed[0].id))
+        } catch {
+          // non-critical — fund selector will show empty
+        } finally {
+          setLoadingFunds(false)
+        }
       }
 
       if (found?.exchangeAcronym) {
@@ -123,6 +146,7 @@ export default function CreateOrderPage() {
         isAon,
         isMargin,
         accountId:  Number(accountId),
+        fundId:     buyFor === 'fund' ? Number(fundId) : undefined,
       })
       setSubmitted(true)
       setShowConfirm(false)
@@ -169,7 +193,16 @@ export default function CreateOrderPage() {
     )
   }
 
-  const canSubmit = Number(quantity) >= 1 && accountId !== ''
+  const selectedFund = funds.find(f => String(f.id) === fundId)
+  const showLiquidityWarning =
+    buyFor === 'fund' &&
+    selectedFund &&
+    limitValue !== '' &&
+    Number(quantity) * Number(limitValue) > selectedFund.liquidAssets
+
+  const canSubmit =
+    Number(quantity) >= 1 &&
+    (buyFor === 'fund' ? fundId !== '' : accountId !== '')
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-6 py-16">
@@ -279,7 +312,32 @@ export default function CreateOrderPage() {
             </label>
           </div>
 
+          {/* Buy for selector — supervisors only */}
+          {isSupervisor && (
+            <div>
+              <label className="block text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 mb-2">
+                Buy for
+              </label>
+              <div className="flex gap-4">
+                {[{ value: 'bank', label: 'Bank' }, { value: 'fund', label: 'Investment Fund' }].map(opt => (
+                  <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="buyFor"
+                      value={opt.value}
+                      checked={buyFor === opt.value}
+                      onChange={() => setBuyFor(opt.value)}
+                      className="text-violet-600"
+                    />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Account selector */}
+          {(!isSupervisor || buyFor === 'bank') && (
           <div>
             <label className="block text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 mb-2">
               Account
@@ -300,6 +358,38 @@ export default function CreateOrderPage() {
               </select>
             )}
           </div>
+          )}
+
+          {/* Fund selector — supervisors buying for fund */}
+          {isSupervisor && buyFor === 'fund' && (
+            <div>
+              <label className="block text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 mb-2">
+                Investment Fund
+              </label>
+              {loadingFunds ? (
+                <p className="text-sm text-slate-400 dark:text-slate-500">Loading funds…</p>
+              ) : funds.length === 0 ? (
+                <p className="text-sm text-slate-400 dark:text-slate-500">No managed funds available.</p>
+              ) : (
+                <select
+                  value={fundId}
+                  onChange={(e) => setFundId(e.target.value)}
+                  className="input-field w-full"
+                >
+                  {funds.map(f => (
+                    <option key={f.id} value={f.id}>
+                      {f.name} — Liquidity: {fmt(f.liquidAssets)} RSD
+                    </option>
+                  ))}
+                </select>
+              )}
+              {showLiquidityWarning && (
+                <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
+                  Warning: order value exceeds this fund's available liquidity. The backend will enforce the limit.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Order type preview */}
           <div className="flex justify-between text-xs pt-1">
@@ -343,6 +433,12 @@ export default function CreateOrderPage() {
                 <span className="text-slate-500 dark:text-slate-400">Approximate Price:</span>
                 <span className="text-slate-900 dark:text-white font-medium">{fmt(approxPrice())}</span>
               </div>
+              {buyFor === 'fund' && selectedFund && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500 dark:text-slate-400">Fund:</span>
+                  <span className="text-slate-900 dark:text-white font-medium">{selectedFund.name}</span>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3">

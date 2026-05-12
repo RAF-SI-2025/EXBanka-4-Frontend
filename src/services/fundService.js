@@ -65,4 +65,9 @@ export const fundService = {
     const { data } = await apiClient.get('/investment/funds', { params: { managerId } })
     return Array.isArray(data) ? data : (data.funds ?? data.items ?? [])
   },
+
+  async getBankPositions() {
+    const { data } = await apiClient.get('/investment/funds/bank-positions')
+    return Array.isArray(data) ? data : (data.positions ?? data.items ?? [])
+  },
 }

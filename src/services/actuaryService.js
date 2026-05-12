@@ -41,4 +41,9 @@ export const actuaryService = {
     const { data } = await apiClient.put(`/api/actuaries/${agentId}/need-approval`, { need_approval: needApproval })
     return data
   },
+
+  async getActuaryPerformances() {
+    const { data } = await apiClient.get('/api/actuaries/performances')
+    return Array.isArray(data) ? data : (data.performances ?? data.items ?? [])
+  },
 }

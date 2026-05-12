@@ -67,6 +67,8 @@ import ClientOtcMarketPage from './pages/client/ClientOtcMarketPage'
 import ClientOtcNegotiationsPage from './pages/client/ClientOtcNegotiationsPage'
 import ClientOtcNegotiationDetailPage from './pages/client/ClientOtcNegotiationDetailPage'
 import ClientOtcContractsPage from './pages/client/ClientOtcContractsPage'
+import BankProfitFundPositionsPage from './pages/employee/BankProfitFundPositionsPage'
+import BankProfitActuariesPage from './pages/employee/BankProfitActuariesPage'
 import FundsDiscoveryPage from './pages/investment/FundsDiscoveryPage'
 import CreateFundPage from './pages/investment/CreateFundPage'
 import FundDetailPage from './pages/investment/FundDetailPage'
@@ -104,6 +106,8 @@ function App() {
               <Route path="/admin/loans/applications" element={<EmployeeLoanApplicationsPage />} />
               <Route path="/admin/loans" element={<EmployeeLoansPage />} />
               <Route path="/admin/actuaries" element={<ActuaryManagementPage />} />
+              <Route path="/admin/bank-profit/actuaries" element={<BankProfitActuariesPage />} />
+              <Route path="/admin/bank-profit/fund-positions" element={<BankProfitFundPositionsPage />} />
               <Route path="/admin/stock-exchanges" element={<StockExchangesPage />} />
               <Route path="/admin/orders" element={<OrderReviewPage />} />
               <Route path="/admin/tax" element={<TaxTrackingPage />} />
