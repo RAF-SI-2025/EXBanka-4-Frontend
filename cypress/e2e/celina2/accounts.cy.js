@@ -20,9 +20,39 @@ function parseSrNumber(str) {
   return parseFloat(str.replace(/\./g, '').replace(',', '.'))
 }
 
+const API_BASE = 'http://localhost:8083'
+const TARA_OWNER_ID = 1
+
 // ── Employee: Kreiranje računa ────────────────────────────────────────────────
 
 describe('Kreiranje računa — zaposleni', () => {
+
+  before(() => {
+    // Delete any dynamically-generated accounts for Tara left over from previous test runs.
+    cy.request('POST', `${API_BASE}/login`, { email: 'admin@exbanka.com', password: 'admin' })
+      .then(({ body }) => {
+        const token = body.access_token
+        cy.request({
+          method: 'GET',
+          url: `${API_BASE}/api/accounts`,
+          headers: { Authorization: `Bearer ${token}` },
+        }).then(({ body: accounts }) => {
+          const stale = accounts.filter(a =>
+            a.ownerId === TARA_OWNER_ID &&
+            /^\d{18}$/.test(a.accountNumber) &&
+            a.accountNumber !== '265000100000000101'
+          )
+          stale.forEach(a => {
+            cy.request({
+              method: 'DELETE',
+              url: `${API_BASE}/api/accounts/${a.id}`,
+              headers: { Authorization: `Bearer ${token}` },
+              failOnStatusCode: false,
+            })
+          })
+        })
+      })
+  })
 
   beforeEach(() => {
     // Given: zaposleni je ulogovan u aplikaciju
