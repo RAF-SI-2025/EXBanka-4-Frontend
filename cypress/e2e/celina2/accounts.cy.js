@@ -40,7 +40,7 @@ describe('Kreiranje računa — zaposleni', () => {
           const stale = accounts.filter(a =>
             a.ownerId === TARA_OWNER_ID &&
             /^\d{18}$/.test(a.accountNumber) &&
-            a.accountNumber !== '265000100000000101'
+            a.accountNumber !== '888000100000000101'
           )
           stale.forEach(a => {
             cy.request({
