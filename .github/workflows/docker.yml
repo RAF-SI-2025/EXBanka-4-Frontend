@@ -45,3 +45,21 @@ jobs:
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL }}
           tags: ghcr.io/raf-si-2025/exbanka-4-frontend:${{ github.sha }}
+
+  deploy:
+    name: Deploy to Kubernetes
+    needs: docker
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubectl
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/frontend frontend=ghcr.io/raf-si-2025/exbanka-4-frontend:${{ github.sha }} -n exbanka
