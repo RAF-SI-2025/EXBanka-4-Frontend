@@ -4,11 +4,14 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import { otcService } from '../../services/otcService'
 import { fmt, fmtDateTime } from '../../utils/formatting'
 
+const CURRENCIES = ['USD', 'EUR', 'RSD', 'CHF', 'GBP', 'JPY', 'AUD', 'CAD']
+
 function OfferModal({ item, onClose, onSubmit }) {
   const [quantity,       setQuantity]       = useState('')
   const [pricePerShare,  setPricePerShare]  = useState('')
   const [premium,        setPremium]        = useState('')
   const [settlementDate, setSettlementDate] = useState('')
+  const [currency,       setCurrency]       = useState(item.currency ?? 'USD')
   const [submitting,     setSubmitting]     = useState(false)
   const [error,          setError]          = useState(null)
 
@@ -21,16 +24,22 @@ function OfferModal({ item, onClose, onSubmit }) {
     setSubmitting(true)
     setError(null)
     try {
-      await onSubmit({
+      const payload = {
         ticker:         item.ticker,
         amount:         Number(quantity),
         pricePerStock:  Number(pricePerShare),
         premium:        premium ? Number(premium) : 0,
         settlementDate,
-        sellerId:       item.ownerId,
-        sellerType:     item.ownerType,
-        currency:       item.currency,
-      })
+        currency,
+      }
+      if (item.isExternal) {
+        payload.sellerRoutingNumber = item.sellerRoutingNumber
+        payload.sellerExternalId   = item.sellerExternalId
+      } else {
+        payload.sellerId   = item.ownerId
+        payload.sellerType = item.ownerType
+      }
+      await onSubmit(payload)
       onClose()
     } catch (err) {
       setError(err?.response?.data?.error || 'Failed to submit offer. Please try again.')
@@ -100,6 +109,21 @@ function OfferModal({ item, onClose, onSubmit }) {
             />
           </div>
 
+          {item.isExternal && (
+            <div>
+              <label className="block text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 font-medium mb-1">
+                Currency
+              </label>
+              <select
+                value={currency}
+                onChange={e => setCurrency(e.target.value)}
+                className="input-field w-full"
+              >
+                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          )}
+
           <div>
             <label className="block text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 font-medium mb-1">
               Settlement Date
@@ -149,9 +173,30 @@ export default function OtcMarketPage() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    otcService.getMarket()
-      .then(data => setItems(Array.isArray(data) ? data : (data.items ?? [])))
-      .catch(() => setError(true))
+
+    Promise.all([
+      otcService.getMarket().catch(() => []),
+      otcService.getExternalStocks().catch(() => ({ items: [], bankName: '' })),
+    ]).then(([local, external]) => {
+      const localItems = Array.isArray(local) ? local : (local.items ?? [])
+
+      const bankName = external.bankName ?? ''
+      const externalItems = (external.items ?? []).flatMap(entry =>
+        (entry.sellers ?? []).map(s => ({
+          ticker:              entry.stock?.ticker ?? '',
+          name:                entry.stock?.name ?? '',
+          pricePerStock:       entry.stock?.price,
+          currency:            entry.stock?.currency ?? '',
+          amount:              s.amount,
+          ownerBank:           bankName,
+          sellerRoutingNumber: s.seller?.routingNumber,
+          sellerExternalId:    String(s.seller?.id ?? ''),
+          isExternal:          true,
+        }))
+      )
+
+      setItems([...localItems, ...externalItems])
+    }).catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [])
 
@@ -226,9 +271,17 @@ export default function OtcMarketPage() {
                           {fmtDateTime(item.lastUpdated)}
                         </td>
                         <td className="px-4 py-3 text-slate-700 dark:text-slate-300 text-xs">
-                          <div>{item.ownerName ?? '—'}</div>
-                          {item.ownerBank && (
-                            <div className="text-slate-400 dark:text-slate-500">{item.ownerBank}</div>
+                          {item.isExternal ? (
+                            <span className="inline-block bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-xs px-2 py-0.5 rounded">
+                              {item.ownerBank || 'Partner Bank'}
+                            </span>
+                          ) : (
+                            <>
+                              <div>{item.ownerName ?? '—'}</div>
+                              {item.ownerBank && (
+                                <div className="text-slate-400 dark:text-slate-500">{item.ownerBank}</div>
+                              )}
+                            </>
                           )}
                         </td>
                         <td className="px-4 py-3">

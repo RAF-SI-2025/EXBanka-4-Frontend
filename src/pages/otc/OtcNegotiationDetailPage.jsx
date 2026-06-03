@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { useAuth } from '../../context/AuthContext'
@@ -43,12 +43,15 @@ export default function OtcNegotiationDetailPage() {
   const [showCounter,   setShowCounter]   = useState(false)
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false)
 
+  const negRef = useRef(null)
+
   useEffect(() => {
     setLoading(true)
     setError(null)
     otcService.getNegotiation(id)
       .then(data => {
         setNeg(data)
+        negRef.current = data
         if (data?.ticker) {
           securitiesService.getListings({ ticker: data.ticker })
             .then(r => {
@@ -63,9 +66,21 @@ export default function OtcNegotiationDetailPage() {
       .finally(() => setLoading(false))
   }, [id])
 
+  // Poll every 10 s for cross-bank negotiations so counter-offers from the partner appear automatically.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const current = negRef.current
+      if (!current || (current.sellerType !== 'INTERBANK' && current.buyerType !== 'INTERBANK')) return
+      otcService.getNegotiation(id)
+        .then(data => { setNeg(data); negRef.current = data })
+        .catch(() => {})
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [id])
+
   const userId = user?.id
   const isMyTurn = neg &&
-    ((neg.status === 'PENDING_SELLER' && neg.sellerType === 'EMPLOYEE' && neg.sellerId === userId) ||
+    ((neg.status === 'PENDING_SELLER' && neg.sellerType === 'EMPLOYEE' && (neg.sellerId === userId || neg.sellerId === 0)) ||
      (neg.status === 'PENDING_BUYER'  && neg.buyerType  === 'EMPLOYEE' && neg.buyerId  === userId))
 
   function apiError(err, fallback) {
@@ -183,7 +198,7 @@ export default function OtcNegotiationDetailPage() {
                 </Field>
               </div>
 
-              <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+              <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <span className={`text-xs font-medium ${
                   isMyTurn
                     ? 'text-violet-600 dark:text-violet-400'
@@ -191,6 +206,11 @@ export default function OtcNegotiationDetailPage() {
                 }`}>
                   {isMyTurn ? 'Your turn' : 'Waiting for the other party'}
                 </span>
+                {(neg.sellerType === 'INTERBANK' || neg.buyerType === 'INTERBANK') && (
+                  <span className="inline-block bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-xs px-2 py-0.5 rounded">
+                    {neg.sellerName || 'Partner Bank'}
+                  </span>
+                )}
               </div>
             </div>
 

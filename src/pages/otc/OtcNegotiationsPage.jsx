@@ -18,7 +18,7 @@ function getPriceColor(price, market) {
 
 function getStatusLabel(neg, userId) {
   const myTurn =
-    (neg.status === 'PENDING_SELLER' && neg.sellerType === 'EMPLOYEE' && neg.sellerId === userId) ||
+    (neg.status === 'PENDING_SELLER' && neg.sellerType === 'EMPLOYEE' && (neg.sellerId === userId || neg.sellerId === 0)) ||
     (neg.status === 'PENDING_BUYER'  && neg.buyerType  === 'EMPLOYEE' && neg.buyerId  === userId)
   return myTurn ? 'Your turn' : 'Waiting for the other party'
 }
@@ -124,6 +124,7 @@ export default function OtcNegotiationsPage() {
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-700">
                     <th className={thClass(false)}>Ticker</th>
+                    <th className={thClass(false)}>Bank</th>
                     <th className={thClass(false)}>Amount</th>
                     <th className={thClass(true)} onClick={() => handleSort('pricePerStock')}>
                       Price / Share<SortIcon col="pricePerStock" />
@@ -142,7 +143,7 @@ export default function OtcNegotiationsPage() {
                 <tbody>
                   {sorted.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
+                      <td colSpan={9} className="px-4 py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
                         You have no active negotiations.
                       </td>
                     </tr>
@@ -161,6 +162,15 @@ export default function OtcNegotiationsPage() {
                         >
                           <td className="px-4 py-3 font-mono font-medium text-slate-800 dark:text-slate-200">
                             {neg.ticker}
+                          </td>
+                          <td className="px-4 py-3">
+                            {neg.sellerType === 'INTERBANK' || neg.buyerType === 'INTERBANK' ? (
+                              <span className="inline-block bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-xs px-2 py-0.5 rounded">
+                                {neg.sellerName || 'Partner Bank'}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-400 dark:text-slate-500">Local</span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-slate-700 dark:text-slate-300 tabular-nums">
                             {neg.amount}

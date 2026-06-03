@@ -31,6 +31,8 @@ export default function ClientPaymentVerifyPage() {
   const [phase, setPhase] = useState('creating')
   const [errorMsg, setErrorMsg] = useState('')
   const pollRef = useRef(null)
+  const [preview, setPreview] = useState(null)
+  const [previewLoading, setPreviewLoading] = useState(true)
 
   useEffect(() => {
     if (!state) return
@@ -38,6 +40,13 @@ export default function ClientPaymentVerifyPage() {
     let cancelled = false
 
     async function start() {
+      // Fetch rate/fee preview in parallel — failure is non-fatal
+      paymentService.previewPayment({
+        fromAccount:      state.fromAccount.accountNumber,
+        recipientAccount: state.recipientAccount,
+        amount:           state.amount,
+      }).then(setPreview).catch(() => {}).finally(() => setPreviewLoading(false))
+
       try {
         const approval = await paymentService.createPaymentApproval({
           fromAccount:      state.fromAccount.accountNumber,
@@ -199,6 +208,24 @@ export default function ClientPaymentVerifyPage() {
           <Row label="Recipient"        value={recipientName} />
           <Row label="Recipient account" value={recipientAccount} />
           <Row label="Amount"           value={fmt(amount, fromAccount.currency)} />
+
+          {/* Cross-bank / cross-currency fee and rate — loaded asynchronously */}
+          {previewLoading && (
+            <div className="flex items-center justify-between py-2.5 border-b border-slate-100 dark:border-slate-800">
+              <span className="text-xs tracking-widest uppercase text-slate-400 dark:text-slate-500">Rate / Fee</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500 animate-pulse">Fetching…</span>
+            </div>
+          )}
+          {!previewLoading && preview && (preview.isCrossBank || preview.exchangeRate > 1) && (
+            <>
+              {preview.exchangeRate > 0 && preview.exchangeRate !== 1 && (
+                <Row label="Exchange rate" value={`1 ${preview.fromCurrency} = ${preview.exchangeRate.toFixed(4)}`} />
+              )}
+              <Row label="Fee" value={preview.fee > 0 ? fmt(preview.fee, preview.fromCurrency) : 'No fee'} />
+              <Row label="Recipient receives" value={fmt(preview.finalAmount, preview.fromCurrency)} />
+            </>
+          )}
+
           <Row label="Payment code"     value={paymentCode} />
           {referenceNumber && <Row label="Reference" value={referenceNumber} />}
           <Row label="Purpose"          value={purpose} />

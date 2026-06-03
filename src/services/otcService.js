@@ -36,6 +36,11 @@ export const otcService = {
     return data
   },
 
+  async getExternalStocks() {
+    const { data } = await apiClient.get('/api/otc/external-stocks')
+    return data
+  },
+
   async getContracts(status) {
     const { data } = await apiClient.get('/otc/contracts', { params: status ? { status } : undefined })
     return data

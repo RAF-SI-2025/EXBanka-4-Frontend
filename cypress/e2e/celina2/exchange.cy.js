@@ -118,6 +118,10 @@ describe('Menjačnica — scenarios 24–26', () => {
         cy.visit('/client/exchange')
         cy.contains('h1', 'Exchange').should('be.visible')
 
+        // Wait for rates to load — estimatedReceive depends on rates being in state
+        cy.contains('th', 'Selling', { timeout: 15000 }).should('be.visible')
+        cy.get('tbody td.font-mono', { timeout: 15000 }).first().should('be.visible')
+
         // Step 1: select accounts (form is below the rates table — scroll first)
         cy.contains('Select accounts').scrollIntoView()
         cy.get('select').eq(0).select(String(rsd.accountId))

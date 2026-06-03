@@ -68,4 +68,13 @@ export const paymentService = {
     const { data } = await clientApiClient.get(`/api/approvals/${id}/poll`)
     return data // { status }
   },
+
+  async previewPayment({ fromAccount, recipientAccount, amount }) {
+    const { data } = await clientApiClient.post('/api/payments/preview', {
+      fromAccount:      fromAccount.replace(/-/g, ''),
+      recipientAccount: recipientAccount.replace(/-/g, ''),
+      amount,
+    })
+    return data // { isCrossBank, exchangeRate, fee, finalAmount, fromCurrency }
+  },
 }

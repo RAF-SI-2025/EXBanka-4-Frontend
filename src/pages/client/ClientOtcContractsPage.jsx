@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import useWindowTitle from '../../hooks/useWindowTitle'
+import { useClientAuth } from '../../context/ClientAuthContext'
 import { clientOtcService } from '../../services/clientOtcService'
 import { fmt, fmtDate } from '../../utils/formatting'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
@@ -85,6 +86,7 @@ function ExerciseModal({ contract, onClose, onConfirm }) {
 
 export default function ClientOtcContractsPage() {
   useWindowTitle('OTC Contracts | AnkaBanka')
+  const { clientUser } = useClientAuth()
 
   const [contracts,    setContracts]    = useState([])
   const [loading,      setLoading]      = useState(true)
@@ -208,7 +210,7 @@ export default function ClientOtcContractsPage() {
                           {c.profit != null ? `${c.profit >= 0 ? '+' : ''}${fmt(c.profit)}` : '—'}
                         </td>
                         <td className="px-4 py-3">
-                          {c.status === 'ACTIVE' && (
+                          {c.status === 'ACTIVE' && c.buyerType === 'CLIENT' && c.buyerId === clientUser?.id && (
                             <button
                               onClick={() => setExerciseItem(c)}
                               className="btn-primary text-xs px-3 py-1"

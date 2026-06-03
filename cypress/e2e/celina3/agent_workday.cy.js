@@ -83,6 +83,10 @@ describe('Agent Work Day', () => {
     cy.visit('/admin/actuaries')
     cy.contains('h1', 'Actuaries').should('be.visible')
 
+    // Wait for actuaries data to load before filtering
+    cy.get('tbody tr').should('not.contain.text', 'Loading')
+    cy.get('tbody tr').should('have.length.greaterThan', 0)
+
     // Filter by last name to find Denis Elezovic
     cy.get('input[name="lastName"]').type('Elezovic')
     cy.get('tbody tr').should('have.length', 1)
