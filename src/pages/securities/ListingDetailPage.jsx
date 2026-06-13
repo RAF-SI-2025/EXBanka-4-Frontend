@@ -204,7 +204,7 @@ export default function ListingDetailPage() {
               <InfoRow label="Bid">{fmt(listing.bid)}</InfoRow>
               <InfoRow label="Change">
                 <span className={listing.changePercent >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}>
-                  {listing.changePercent >= 0 ? '+' : ''}{listing.changePercent.toFixed(2)}%
+                  {listing.changePercent >= 0 ? '+' : ''}{(listing.changePercent ?? 0).toFixed(2)}%
                 </span>
               </InfoRow>
               <InfoRow label="Volume">{fmt(listing.volume)}</InfoRow>

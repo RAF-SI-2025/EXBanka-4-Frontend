@@ -535,7 +535,7 @@ function EmployeeCardRow({ card, currency = 'RSD', onUpdate, addSuccess, onClick
         ) : (
           <>
             <span className="text-xs text-slate-400 dark:text-slate-500">
-              Limit: <span className="text-slate-600 dark:text-slate-300">{card.cardLimit.toLocaleString('sr-RS')} {currency}</span>
+              Limit: <span className="text-slate-600 dark:text-slate-300">{card.cardLimit?.toLocaleString('sr-RS') ?? '—'} {currency}</span>
             </span>
             {!card.isDeactivated && (
               <button onClick={() => { setLimitInput(String(card.cardLimit)); setEditingLimit(true) }}
@@ -658,7 +658,7 @@ function EmployeeCardActions({ card, currency = 'RSD', onUpdate, addSuccess }) {
         ) : (
           <>
             <span className="text-xs text-slate-400 dark:text-slate-500">
-              Limit: <span className="text-slate-600 dark:text-slate-300">{card.cardLimit.toLocaleString('sr-RS')} {currency}</span>
+              Limit: <span className="text-slate-600 dark:text-slate-300">{card.cardLimit?.toLocaleString('sr-RS') ?? '—'} {currency}</span>
             </span>
             <button onClick={() => { setLimitInput(String(card.cardLimit)); setEditingLimit(true) }}
               className="text-xs tracking-widest uppercase text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">

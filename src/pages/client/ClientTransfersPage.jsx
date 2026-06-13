@@ -319,7 +319,7 @@ export default function ClientTransfersPage() {
                         {t.fee > 0 ? `${fmt(t.fee)} ${accountCurrencyByNumber(t.fromAccount)}` : '—'}
                       </td>
                       <td className="px-5 py-3.5 text-sm text-right text-slate-500 dark:text-slate-400 font-light whitespace-nowrap">
-                        {t.exchangeRate !== 1 ? t.exchangeRate.toFixed(4) : '—'}
+                        {t.exchangeRate != null && t.exchangeRate !== 1 ? t.exchangeRate.toFixed(4) : '—'}
                       </td>
                     </tr>
                   ))}

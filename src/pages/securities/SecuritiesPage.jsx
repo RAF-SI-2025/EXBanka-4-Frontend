@@ -329,7 +329,7 @@ export default function SecuritiesPage() {
                               ? 'text-emerald-600 dark:text-emerald-400'
                               : 'text-red-500 dark:text-red-400'
                           }`}>
-                            {l.changePercent >= 0 ? '+' : ''}{l.changePercent.toFixed(2)}%
+                            {l.changePercent >= 0 ? '+' : ''}{(l.changePercent ?? 0).toFixed(2)}%
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2 justify-end">

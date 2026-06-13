@@ -1,5 +1,6 @@
 export function fmt(n, currency) {
-  const formatted = n.toLocaleString('sr-RS', {
+  if (n == null || isNaN(n)) return '—'
+  const formatted = Number(n).toLocaleString('sr-RS', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })

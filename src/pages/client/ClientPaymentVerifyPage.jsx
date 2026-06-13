@@ -9,7 +9,8 @@ import { useClientPayments } from '../../context/ClientPaymentsContext'
 const POLL_INTERVAL = 3000
 
 function fmt(n, currency) {
-  return n.toLocaleString('sr-RS', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ` ${currency}`
+  if (n == null || isNaN(n)) return `— ${currency}`
+  return Number(n).toLocaleString('sr-RS', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ` ${currency}`
 }
 
 function Row({ label, value }) {

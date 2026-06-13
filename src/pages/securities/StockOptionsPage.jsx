@@ -38,10 +38,10 @@ function OptionCell({ option, navigate, direction }) {
         {approxChange >= 0 ? '+' : ''}{fmt(approxChange)}
       </td>
       <td className={`px-3 py-2 tabular-nums text-center ${changeColor}`}>
-        {option.changePercent >= 0 ? '+' : ''}{option.changePercent.toFixed(2)}%
+        {option.changePercent >= 0 ? '+' : ''}{(option.changePercent ?? 0).toFixed(2)}%
       </td>
       <td className="px-3 py-2 tabular-nums text-center">{fmt(option.volume)}</td>
-      <td className="px-3 py-2 tabular-nums text-center">{option.openInterest.toLocaleString()}</td>
+      <td className="px-3 py-2 tabular-nums text-center">{option.openInterest?.toLocaleString() ?? '—'}</td>
       <td className="px-2 py-2 text-center">
         <button
           onClick={() => navigate(`/orders/new?ticker=${encodeURIComponent(option.ticker)}&direction=${direction}`)}

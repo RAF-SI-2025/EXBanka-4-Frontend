@@ -305,9 +305,9 @@ export default function ClientExchangePage() {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-right font-mono text-sm text-slate-700 dark:text-slate-300">{rate.buyingRate.toFixed(4)}</td>
-                        <td className="px-6 py-4 text-right font-mono text-sm font-medium text-slate-900 dark:text-white">{rate.middleRate.toFixed(4)}</td>
-                        <td className="px-6 py-4 text-right font-mono text-sm text-slate-700 dark:text-slate-300">{rate.sellingRate.toFixed(4)}</td>
+                        <td className="px-6 py-4 text-right font-mono text-sm text-slate-700 dark:text-slate-300">{rate.buyingRate?.toFixed(4) ?? '—'}</td>
+                        <td className="px-6 py-4 text-right font-mono text-sm font-medium text-slate-900 dark:text-white">{rate.middleRate?.toFixed(4) ?? '—'}</td>
+                        <td className="px-6 py-4 text-right font-mono text-sm text-slate-700 dark:text-slate-300">{rate.sellingRate?.toFixed(4) ?? '—'}</td>
                       </tr>
                     )
                   }
@@ -526,7 +526,7 @@ export default function ClientExchangePage() {
                         <DetailRow label="Amount" value={fmt(preview.fromAmount, preview.fromCurrency)} />
                         <DetailRow label="To account"   value={toAccount.accountNumber} />
                         <DetailRow label="To currency"  value={preview.toCurrency} />
-                        <DetailRow label="Rate"         value={`1 ${preview.fromCurrency} = ${preview.rate.toFixed(4)} ${preview.toCurrency}`} />
+                        <DetailRow label="Rate"         value={`1 ${preview.fromCurrency} = ${preview.rate?.toFixed(4) ?? '—'} ${preview.toCurrency}`} />
                         <DetailRow label="Commission"   value={fmt(preview.commission, preview.fromCurrency)} />
                         <DetailRow label="You receive"  value={fmt(preview.toAmount, preview.toCurrency)} highlight />
                       </div>
@@ -599,7 +599,7 @@ export default function ClientExchangePage() {
                           {fmt(tx.toAmount, tx.toCurrency)}
                         </td>
                         <td className="px-6 py-4 text-right font-mono text-xs text-slate-500 dark:text-slate-400">
-                          {tx.rate.toFixed(4)}
+                          {tx.rate?.toFixed(4) ?? '—'}
                         </td>
                         <td className="px-6 py-4 text-right font-mono text-xs text-slate-500 dark:text-slate-400">
                           {fmt(tx.commission, tx.fromCurrency)}
