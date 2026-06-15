@@ -135,7 +135,7 @@ export default function EmployeeDetailPage() {
     setEditing(true)
   }
 
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/
 
   function validate() {
     const errs = {}
@@ -147,6 +147,7 @@ export default function EmployeeDetailPage() {
     if (!form.position?.trim())   errs.position   = 'This field is required.'
     if (!form.department?.trim()) errs.department = 'This field is required.'
     if (!/^\d{13}$/.test(form.jmbg)) errs.jmbg   = 'Must be exactly 13 digits.'
+    if (form.phoneNumber && !/^\+?[0-9]+$/.test(form.phoneNumber)) errs.phoneNumber = 'Only digits and an optional leading + are allowed.'
     if (form.dateOfBirth && new Date(form.dateOfBirth) >= new Date()) errs.dateOfBirth = 'Date of birth cannot be in the future.'
     return errs
   }
@@ -267,7 +268,7 @@ export default function EmployeeDetailPage() {
 
               <Section title="Contact">
                 <EditRow label="Email"   name="email"       value={form.email}       onChange={handleChange} onBlur={handleBlur} type="email" error={fieldErrors.email} />
-                <EditRow label="Phone"   name="phoneNumber" value={form.phoneNumber} onChange={handleChange} onBlur={handleBlur} />
+                <EditRow label="Phone"   name="phoneNumber" value={form.phoneNumber} onChange={handleChange} onBlur={handleBlur} error={fieldErrors.phoneNumber} />
                 <EditRow label="Address" name="address"     value={form.address}     onChange={handleChange} onBlur={handleBlur} />
               </Section>
 

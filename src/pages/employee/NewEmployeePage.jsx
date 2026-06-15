@@ -47,7 +47,8 @@ export default function NewEmployeePage() {
       if (!form[field].trim()) next[field] = true
     })
     if (!/^\d{13}$/.test(form.jmbg)) next.jmbg = true
-    if (!next.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = true
+    if (!next.email && !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(form.email)) next.email = true
+    if (form.phoneNumber && !/^\+?[0-9]+$/.test(form.phoneNumber)) next.phoneNumber = true
     if (form.dateOfBirth && new Date(form.dateOfBirth) >= new Date()) next.dateOfBirth = true
     return next
   }
@@ -125,8 +126,8 @@ export default function NewEmployeePage() {
                 <Field label="Email *" error={errors.email} errorMsg="Wrong email format.">
                   <input className={`input-field${errors.email ? ' input-error' : ''}`} type="email" name="email" value={form.email} onChange={handleChange} onBlur={handleBlur} placeholder="email@ankabanka.com" />
                 </Field>
-                <Field label="Phone">
-                  <input className="input-field" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} placeholder="+381..." />
+                <Field label="Phone" error={errors.phoneNumber} errorMsg="Only digits and an optional leading + are allowed.">
+                  <input className={`input-field${errors.phoneNumber ? ' input-error' : ''}`} name="phoneNumber" value={form.phoneNumber} onChange={handleChange} onBlur={handleBlur} placeholder="+381..." />
                 </Field>
               </div>
               <Field label="Address" required error={errors.address}>

@@ -44,7 +44,8 @@ export default function NewClientPage() {
     const errs = {}
     REQUIRED.forEach((f) => { if (!form[f].trim()) errs[f] = 'This field is required.' })
     if (!/^\d{13}$/.test(form.jmbg)) errs.jmbg = 'Must be exactly 13 digits.'
-    if (!errs.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Please enter a valid email address.'
+    if (!errs.email && !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(form.email)) errs.email = 'Please enter a valid email address.'
+    if (!errs.phoneNumber && form.phoneNumber && !/^\+?[0-9]+$/.test(form.phoneNumber)) errs.phoneNumber = 'Only digits and an optional leading + are allowed.'
     if (!errs.dateOfBirth && form.dateOfBirth && new Date(form.dateOfBirth) >= new Date()) errs.dateOfBirth = 'Date of birth cannot be in the future.'
     const emailUsed = clients.some(
       (c) => c.email.toLowerCase() === form.email.trim().toLowerCase()
