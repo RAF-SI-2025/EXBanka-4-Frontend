@@ -6,6 +6,10 @@ import {
 } from 'recharts'
 import useWindowTitle from '../../hooks/useWindowTitle'
 import { securitiesService } from '../../services/securitiesService'
+import { watchlistService } from '../../services/watchlistService'
+import { priceAlertService } from '../../services/priceAlertService'
+import { recurringOrderService } from '../../services/recurringOrderService'
+import { apiClient } from '../../services/apiClient'
 import { fmt } from '../../utils/formatting'
 
 const PERIODS = [
@@ -37,6 +41,31 @@ export default function ListingDetailPage() {
   const [historyLoading, setHistoryLoading] = useState(false)
   const [error, setError]             = useState(null)
   const skipInitialPeriod             = useRef(true)
+
+  // Alert modal
+  const [showAlert, setShowAlert]       = useState(false)
+  const [alertCondition, setAlertCondition] = useState('ABOVE')
+  const [alertThreshold, setAlertThreshold] = useState('')
+  const [alertNotif, setAlertNotif]     = useState('BOTH')
+  const [alertBusy, setAlertBusy]       = useState(false)
+  const [alertDone, setAlertDone]       = useState(false)
+
+  // Watchlist modal
+  const [showWatchlist, setShowWatchlist]   = useState(false)
+  const [watchlists, setWatchlists]         = useState([])
+  const [watchlistLoading, setWatchlistLoading] = useState(false)
+  const [watchlistBusy, setWatchlistBusy]   = useState(false)
+
+  // Recurring order modal
+  const [showRecurring, setShowRecurring]   = useState(false)
+  const [recDirection, setRecDirection]     = useState('BUY')
+  const [recMode, setRecMode]               = useState('BY_AMOUNT')
+  const [recValue, setRecValue]             = useState('')
+  const [recCadence, setRecCadence]         = useState('MONTHLY')
+  const [recAccountId, setRecAccountId]     = useState('')
+  const [recAccounts, setRecAccounts]       = useState([])
+  const [recBusy, setRecBusy]               = useState(false)
+  const [recDone, setRecDone]               = useState(false)
 
   useWindowTitle(listing ? `${listing.ticker} | AnkaBanka` : 'Securities | AnkaBanka')
 
@@ -91,6 +120,74 @@ export default function ListingDetailPage() {
     )
   }
 
+  async function handleCreateAlert() {
+    if (!alertThreshold) return
+    setAlertBusy(true)
+    try {
+      await priceAlertService.create({
+        listingId: listing.id,
+        condition: alertCondition,
+        threshold: Number(alertThreshold),
+        notificationType: alertNotif,
+      })
+      setAlertDone(true)
+      setTimeout(() => { setShowAlert(false); setAlertDone(false); setAlertThreshold('') }, 1200)
+    } catch { /* error toast */ }
+    finally { setAlertBusy(false) }
+  }
+
+  async function openWatchlistModal() {
+    setShowWatchlist(true)
+    setWatchlistLoading(true)
+    try {
+      const res = await watchlistService.listWatchlists()
+      setWatchlists(Array.isArray(res) ? res : (res.watchlists ?? []))
+    } catch { setWatchlists([]) }
+    finally { setWatchlistLoading(false) }
+  }
+
+  async function handleAddToWatchlist(wlId) {
+    setWatchlistBusy(true)
+    try {
+      await watchlistService.addItem(wlId, listing.id)
+      setShowWatchlist(false)
+    } catch { /* error toast */ }
+    finally { setWatchlistBusy(false) }
+  }
+
+  async function openRecurringModal() {
+    setShowRecurring(true)
+    setRecDone(false)
+    setRecDirection('BUY')
+    setRecMode('BY_AMOUNT')
+    setRecValue('')
+    setRecCadence('MONTHLY')
+    try {
+      const accs = await apiClient.get('/api/bank-accounts').then((r) => r.data)
+      const list = Array.isArray(accs) ? accs : []
+      setRecAccounts(list)
+      if (list.length > 0) setRecAccountId(String(list[0].id ?? list[0].accountId ?? ''))
+    } catch { setRecAccounts([]) }
+  }
+
+  async function handleCreateRecurring() {
+    if (!recValue || !recAccountId) return
+    setRecBusy(true)
+    try {
+      await recurringOrderService.create({
+        assetId:   listing.id,
+        direction: recDirection,
+        mode:      recMode,
+        value:     Number(recValue),
+        accountId: Number(recAccountId),
+        cadence:   recCadence,
+      })
+      setRecDone(true)
+      setTimeout(() => { setShowRecurring(false); setRecDone(false); setRecValue('') }, 1200)
+    } catch { /* error toast */ }
+    finally { setRecBusy(false) }
+  }
+
   const sortedHistory = [...history].sort((a, b) => (a.date < b.date ? 1 : -1))
 
   return (
@@ -106,17 +203,149 @@ export default function ListingDetailPage() {
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{listing.name}</p>
           </div>
-          <div className="flex items-center gap-4 mt-2">
-            <button
-              onClick={() => navigate(`/orders/new?ticker=${listing.ticker}&direction=BUY`)}
-              className="btn-primary"
-            >
-              Buy
-            </button>
-            <Link to="/securities" className="text-sm text-violet-600 dark:text-violet-400 hover:underline">
-              ← Back to Securities
-            </Link>
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <button onClick={() => navigate(`/orders/new?ticker=${listing.ticker}&direction=BUY`)} className="btn-primary text-xs px-4 py-2">Buy</button>
+            <button onClick={() => { setShowAlert(true); setAlertDone(false) }} className="text-xs px-4 py-2 border border-orange-300 dark:border-orange-600 text-orange-700 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded transition-colors">Set Alert</button>
+            <button onClick={openWatchlistModal} className="text-xs px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded transition-colors">+ Watchlist</button>
+            <button onClick={openRecurringModal} className="text-xs px-4 py-2 border border-violet-300 dark:border-violet-600 text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded transition-colors">Recurring Order</button>
+            <Link to="/securities" className="text-sm text-violet-600 dark:text-violet-400 hover:underline ml-2">← Back</Link>
           </div>
+
+          {/* Alert modal */}
+          {showAlert && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowAlert(false)}>
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-xs mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                  <h2 className="font-serif text-lg font-light text-slate-900 dark:text-white">Set Alert — {listing.ticker}</h2>
+                </div>
+                {alertDone ? (
+                  <div className="px-6 py-8 text-center text-emerald-600 dark:text-emerald-400 text-sm font-medium">Alert created ✓</div>
+                ) : (
+                  <div className="px-6 py-4 flex flex-col gap-3">
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Condition</label>
+                      <select value={alertCondition} onChange={(e) => setAlertCondition(e.target.value)} className="input-field w-full">
+                        <option value="ABOVE">Price Above</option>
+                        <option value="BELOW">Price Below</option>
+                        <option value="CHANGE_PCT_UP">Change % Up</option>
+                        <option value="CHANGE_PCT_DOWN">Change % Down</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Threshold</label>
+                      <input type="number" value={alertThreshold} onChange={(e) => setAlertThreshold(e.target.value)} className="input-field w-full" placeholder="e.g. 150.00" min="0" step="0.01" autoFocus />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Notification</label>
+                      <select value={alertNotif} onChange={(e) => setAlertNotif(e.target.value)} className="input-field w-full">
+                        <option value="BOTH">Email + In-app</option>
+                        <option value="EMAIL">Email only</option>
+                        <option value="IN_APP">In-app only</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+                {!alertDone && (
+                  <div className="px-6 pb-5 flex justify-end gap-2">
+                    <button onClick={() => setShowAlert(false)} className="text-xs px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 rounded">Cancel</button>
+                    <button onClick={handleCreateAlert} disabled={alertBusy || !alertThreshold} className="btn-primary text-xs px-4 py-2 disabled:opacity-50">{alertBusy ? 'Creating…' : 'Create Alert'}</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Watchlist modal */}
+          {showWatchlist && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowWatchlist(false)}>
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-xs mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                  <h2 className="font-serif text-lg font-light text-slate-900 dark:text-white">Add {listing.ticker} to Watchlist</h2>
+                </div>
+                <div className="px-6 py-4">
+                  {watchlistLoading ? (
+                    <p className="text-sm text-slate-400 text-center py-4">Loading…</p>
+                  ) : watchlists.length === 0 ? (
+                    <p className="text-sm text-slate-400 text-center py-4">No watchlists. Create one first.</p>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      {watchlists.map((wl) => (
+                        <button key={wl.id} onClick={() => handleAddToWatchlist(wl.id)} disabled={watchlistBusy} className="text-left px-3 py-2.5 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-sm text-slate-700 dark:text-slate-300 font-medium transition-colors disabled:opacity-50">
+                          {wl.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="px-6 pb-5 flex justify-end">
+                  <button onClick={() => setShowWatchlist(false)} className="text-xs px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 rounded">Cancel</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Recurring order modal */}
+          {showRecurring && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowRecurring(false)}>
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-xs mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                <div className="px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
+                  <h2 className="font-serif text-lg font-light text-slate-900 dark:text-white">Recurring Order — {listing.ticker}</h2>
+                </div>
+                {recDone ? (
+                  <div className="px-6 py-8 text-center text-emerald-600 dark:text-emerald-400 text-sm font-medium">Recurring order created ✓</div>
+                ) : (
+                  <div className="px-6 py-4 flex flex-col gap-3">
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Direction</label>
+                      <select value={recDirection} onChange={(e) => setRecDirection(e.target.value)} className="input-field w-full">
+                        <option value="BUY">Buy</option>
+                        <option value="SELL">Sell</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Mode</label>
+                      <select value={recMode} onChange={(e) => setRecMode(e.target.value)} className="input-field w-full">
+                        <option value="BY_AMOUNT">By Amount (currency)</option>
+                        <option value="BY_QUANTITY">By Quantity (shares)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">{recMode === 'BY_AMOUNT' ? 'Amount' : 'Quantity'}</label>
+                      <input type="number" value={recValue} onChange={(e) => setRecValue(e.target.value)} className="input-field w-full" placeholder={recMode === 'BY_AMOUNT' ? 'e.g. 500' : 'e.g. 5'} min="1" step={recMode === 'BY_AMOUNT' ? '0.01' : '1'} autoFocus />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Frequency</label>
+                      <select value={recCadence} onChange={(e) => setRecCadence(e.target.value)} className="input-field w-full">
+                        <option value="DAILY">Daily</option>
+                        <option value="WEEKLY">Weekly</option>
+                        <option value="MONTHLY">Monthly</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Account</label>
+                      {recAccounts.length > 0 ? (
+                        <select value={recAccountId} onChange={(e) => setRecAccountId(e.target.value)} className="input-field w-full">
+                          {recAccounts.map((a) => (
+                            <option key={a.id ?? a.accountId} value={a.id ?? a.accountId}>
+                              {a.accountNumber ?? a.account_number ?? `Account #${a.id ?? a.accountId}`}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input type="number" value={recAccountId} onChange={(e) => setRecAccountId(e.target.value)} className="input-field w-full" placeholder="Account ID" />
+                      )}
+                    </div>
+                  </div>
+                )}
+                {!recDone && (
+                  <div className="px-6 pb-5 flex justify-end gap-2">
+                    <button onClick={() => setShowRecurring(false)} className="text-xs px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 rounded">Cancel</button>
+                    <button onClick={handleCreateRecurring} disabled={recBusy || !recValue || !recAccountId} className="btn-primary text-xs px-4 py-2 disabled:opacity-50">{recBusy ? 'Creating…' : 'Create'}</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         <div className="w-10 h-px bg-violet-500 dark:bg-violet-400 mb-8" />
 

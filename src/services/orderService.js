@@ -80,4 +80,26 @@ export const orderService = {
     const { data } = await apiClient.delete(`/orders/${id}/portions`)
     return data
   },
+
+  async getMyOrders({ status, assetType, direction, fromDate, toDate, page = 1, pageSize = 20 } = {}) {
+    const params = { page, page_size: pageSize }
+    if (status)    params.status     = status
+    if (assetType) params.asset_type = assetType
+    if (direction) params.direction  = direction
+    if (fromDate)  params.from_date  = fromDate
+    if (toDate)    params.to_date    = toDate
+    const { data } = await apiClient.get('/orders/my', { params })
+    return data
+  },
+
+  async getClientOrders({ status, assetType, direction, fromDate, toDate, page = 1, pageSize = 20 } = {}) {
+    const params = { page, page_size: pageSize }
+    if (status)    params.status     = status
+    if (assetType) params.asset_type = assetType
+    if (direction) params.direction  = direction
+    if (fromDate)  params.from_date  = fromDate
+    if (toDate)    params.to_date    = toDate
+    const { data } = await clientApiClient.get('/client/orders', { params })
+    return data
+  },
 }

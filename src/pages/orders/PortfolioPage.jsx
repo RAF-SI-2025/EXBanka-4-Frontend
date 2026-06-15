@@ -4,6 +4,7 @@ import useWindowTitle from '../../hooks/useWindowTitle'
 import { useAuth } from '../../context/AuthContext'
 import { portfolioService } from '../../services/portfolioService'
 import { fundService } from '../../services/fundService'
+import { dividendService } from '../../services/dividendService'
 import { fmt } from '../../utils/formatting'
 import { InvestModal, BankDepositModal, WithdrawModal } from '../../components/funds/FundModals'
 
@@ -35,6 +36,7 @@ export default function PortfolioPage() {
     { label: 'All Securities',    key: 'all' },
     { label: 'Public Securities', key: 'public' },
     ...(isAgent || isSupervisor ? [{ label: 'My Funds', key: 'funds' }] : []),
+    ...(isAgent || isSupervisor ? [{ label: 'Dividends', key: 'dividends' }] : []),
   ]
 
   const [holdings, setHoldings]   = useState([])
@@ -63,6 +65,10 @@ export default function PortfolioPage() {
   const [myFundsLoading, setMyFundsLoading] = useState(false)
   const [myFundsError, setMyFundsError] = useState(null)
   const [fundModal, setFundModal]       = useState(null) // { type, fund }
+
+  const [dividends, setDividends]           = useState([])
+  const [dividendsLoading, setDivLoading]   = useState(false)
+  const [dividendsError, setDivError]       = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -102,6 +108,23 @@ export default function PortfolioPage() {
   useEffect(() => {
     if (activeTab.key === 'funds') loadMyFunds()
   }, [activeTab.key, loadMyFunds])
+
+  const loadDividends = useCallback(async () => {
+    setDivLoading(true)
+    setDivError(null)
+    try {
+      const res = await dividendService.getMyDividends()
+      setDividends(Array.isArray(res) ? res : (res.dividends ?? res.payouts ?? []))
+    } catch {
+      setDivError(true)
+    } finally {
+      setDivLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab.key === 'dividends') loadDividends()
+  }, [activeTab.key, loadDividends])
 
   const displayed = activeTab.key === 'public'
     ? holdings.filter(h => h.is_public)
@@ -268,8 +291,46 @@ export default function PortfolioPage() {
         </div>
       )}
 
+      {/* ── Dividende tab ── */}
+      {activeTab.key === 'dividends' && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+          {dividendsLoading ? (
+            <div className="flex items-center justify-center py-20"><p className="text-slate-500 text-sm">Loading dividends…</p></div>
+          ) : dividendsError ? (
+            <div className="flex items-center justify-center py-20"><p className="text-red-500 text-sm">Failed to load dividends.</p></div>
+          ) : dividends.length === 0 ? (
+            <div className="flex items-center justify-center py-20"><p className="text-slate-400 text-sm">No dividend payouts yet.</p></div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-700">
+                    {['Ticker', 'Date', 'Quantity', 'Gross Amount', 'Tax (RSD)', 'Net Amount', 'Currency'].map(h => (
+                      <th key={h} className="px-4 py-4 text-left text-xs tracking-widests uppercase text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {dividends.map((d, i) => (
+                    <tr key={d.id} className={`border-b border-slate-100 dark:border-slate-800 last:border-0 ${i % 2 === 0 ? '' : 'bg-slate-50/50 dark:bg-slate-800/20'}`}>
+                      <td className="px-4 py-3 font-mono font-medium text-slate-900 dark:text-white">{d.ticker ?? d.stock_listing_id ?? '—'}</td>
+                      <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{d.payment_date ?? '—'}</td>
+                      <td className="px-4 py-3 tabular-nums text-slate-700 dark:text-slate-300">{d.quantity != null ? Number(d.quantity).toFixed(4) : '—'}</td>
+                      <td className="px-4 py-3 tabular-nums text-slate-700 dark:text-slate-300">{d.gross_amount != null ? fmt(d.gross_amount) : '—'}</td>
+                      <td className="px-4 py-3 tabular-nums text-amber-600 dark:text-amber-400">{d.tax_rsd != null ? fmt(d.tax_rsd) : '—'}</td>
+                      <td className="px-4 py-3 tabular-nums font-medium text-emerald-600 dark:text-emerald-400">{d.net_amount != null ? fmt(d.net_amount) : '—'}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{d.currency ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Securities tabs ── */}
-      {activeTab.key !== 'funds' && (
+      {activeTab.key !== 'funds' && activeTab.key !== 'dividends' && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-20">
