@@ -116,7 +116,7 @@ export default function ClientMyOrdersPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-700">
-                    {['Tip', 'Hartija', 'Smer', 'Količina', 'Cijena', 'Status', 'Datum', 'Komisija'].map((h) => (
+                    {['Type', 'Security', 'Direction', 'Quantity', 'Price', 'Status', 'Date', 'Commission'].map((h) => (
                       <th key={h} className="px-4 py-4 text-left text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
