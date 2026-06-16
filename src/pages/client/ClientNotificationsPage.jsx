@@ -8,6 +8,8 @@ const TYPE_ICONS = {
   PAYMENT:      'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',
   CARD_BLOCKED: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
   LOAN_APPROVED:'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z',
+  ORDER_DONE:   'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+  PRICE_ALERT:  'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
   DEFAULT:      'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9',
 }
 
@@ -85,7 +87,8 @@ export default function ClientNotificationsPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-10 px-6">
+      <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
           <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-1">Inbox</p>
@@ -174,7 +177,7 @@ export default function ClientNotificationsPage() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-40"
+            className="px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-40 hover:border-violet-400 transition-colors"
           >
             Previous
           </button>
@@ -182,12 +185,13 @@ export default function ClientNotificationsPage() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-40"
+            className="px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded-lg disabled:opacity-40 hover:border-violet-400 transition-colors"
           >
             Next
           </button>
         </div>
       )}
+      </div>
     </div>
   )
 }

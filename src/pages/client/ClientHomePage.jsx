@@ -9,6 +9,8 @@ import { NAV_ITEMS } from '../../layouts/ClientPortalLayout'
 import { fmt, fmtDate } from '../../utils/formatting'
 import { useRecipients } from '../../context/RecipientsContext'
 import { exchangeService } from '../../services/exchangeService'
+import NotificationBell from '../../components/NotificationBell'
+import { clientNotificationService } from '../../services/clientNotificationService'
 
 function BalanceCarousel({ accounts, onRename }) {
   const multi = accounts.length > 1
@@ -273,6 +275,9 @@ export default function ClientHomePage() {
                 <span className="text-sm text-slate-500 dark:text-slate-400 font-light hidden sm:block">
                   Welcome back, <span className="text-slate-900 dark:text-white font-medium">{clientUser.firstName} {clientUser.lastName}</span>
                 </span>
+              )}
+              {clientUser && (
+                <NotificationBell service={clientNotificationService} notificationsRoute="/client/notifications" />
               )}
               <button
                 onClick={toggle}

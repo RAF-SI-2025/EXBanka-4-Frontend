@@ -38,11 +38,32 @@ function flushQueue(error, token) {
   waitingQueue = []
 }
 
+const CLIENT_API_ERROR_MESSAGES = {
+  400: 'Bad request. Please check the submitted data.',
+  403: 'You do not have permission to perform this action.',
+  404: 'The requested resource was not found.',
+  409: 'Conflict. This resource already exists or cannot be modified.',
+  500: 'Server error. Please try again later.',
+  502: 'Service is currently unreachable. Please try again shortly.',
+  503: 'Service unavailable. Please try again later.',
+  504: 'The request timed out. Please try again.',
+}
+
+function dispatchClientApiError(status, message) {
+  window.dispatchEvent(new CustomEvent('api:error', { detail: { status, message } }))
+}
+
 clientApiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
     const status   = error.response?.status
+
+    if (status && status !== 401) {
+      const backendMessage = error.response?.data?.error
+      const message = backendMessage || CLIENT_API_ERROR_MESSAGES[status] || 'An unexpected error occurred.'
+      dispatchClientApiError(status, message)
+    }
 
     if (status !== 401 || original._retry) {
       return Promise.reject(error)
