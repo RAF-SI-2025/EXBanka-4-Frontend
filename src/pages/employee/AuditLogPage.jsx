@@ -44,7 +44,7 @@ export default function AuditLogPage() {
       pageSize: PAGE_SIZE,
     })
       .then((res) => {
-        const items = Array.isArray(res) ? res : (res.logs ?? res.items ?? [])
+        const items = Array.isArray(res) ? res : (res.entries ?? res.logs ?? res.items ?? [])
         setLogs(items)
         setTotalPages(res.total_pages ?? 1)
       })
