@@ -77,23 +77,23 @@ export default function ClientWatchlistPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="font-serif text-2xl font-light text-slate-900 dark:text-white mb-1">Watchlists</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Vaše praćene hartije</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Your watched securities</p>
           </div>
-          <button onClick={() => setShowCreate(true)} className="btn-primary text-xs px-4 py-2">+ Nova</button>
+          <button onClick={() => setShowCreate(true)} className="btn-primary text-xs px-4 py-2">+ New</button>
         </div>
 
         {showCreate && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowCreate(false)}>
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
               <div className="px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <h2 className="font-serif text-lg font-light text-slate-900 dark:text-white">Nova watchlista</h2>
+                <h2 className="font-serif text-lg font-light text-slate-900 dark:text-white">New Watchlist</h2>
               </div>
               <div className="px-6 py-5">
-                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreate()} className="input-field w-full" placeholder="Naziv…" autoFocus />
+                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreate()} className="input-field w-full" placeholder="Name…" autoFocus />
               </div>
               <div className="px-6 pb-6 pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
-                <button onClick={() => setShowCreate(false)} className="text-xs px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Odustani</button>
-                <button onClick={handleCreate} disabled={creating || !newName.trim()} className="btn-primary text-xs px-4 py-2 disabled:opacity-50">{creating ? 'Kreiranje…' : 'Kreiraj'}</button>
+                <button onClick={() => setShowCreate(false)} className="text-xs px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+                <button onClick={handleCreate} disabled={creating || !newName.trim()} className="btn-primary text-xs px-4 py-2 disabled:opacity-50">{creating ? 'Creating…' : 'Create'}</button>
               </div>
             </div>
           </div>
@@ -102,7 +102,7 @@ export default function ClientWatchlistPage() {
         {loading ? (
           <div className="text-center text-slate-400 text-sm py-12">Loading…</div>
         ) : watchlists.length === 0 ? (
-          <div className="text-center text-slate-400 text-sm py-12">Nema watchlista.</div>
+          <div className="text-center text-slate-400 text-sm py-12">No watchlists.</div>
         ) : (
           <div className="flex flex-col gap-4">
             {watchlists.map((wl) => (
@@ -126,7 +126,7 @@ export default function ClientWatchlistPage() {
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-slate-100 dark:border-slate-800">
-                            {['Ticker', 'Naziv', 'Cijena', 'Promjena', ''].map((h) => (
+                            {['Ticker', 'Name', 'Price', 'Change', ''].map((h) => (
                               <th key={h} className="px-4 py-3 text-left text-xs tracking-widests uppercase text-slate-500 dark:text-slate-400 font-medium">{h}</th>
                             ))}
                           </tr>

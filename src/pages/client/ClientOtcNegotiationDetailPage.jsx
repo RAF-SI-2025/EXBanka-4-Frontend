@@ -287,7 +287,13 @@ export default function ClientOtcNegotiationDetailPage() {
                       Reject
                     </button>
                     <button
-                      onClick={() => setShowCounter(true)}
+                      onClick={() => {
+                        setCounterQty(String(neg.amount ?? ''))
+                        setCounterPrice(String(neg.pricePerStock ?? ''))
+                        setCounterDate(neg.settlementDate ? String(neg.settlementDate).slice(0, 10) : '')
+                        setCounterPremium(String(neg.premium ?? '0'))
+                        setShowCounter(true)
+                      }}
                       disabled={acting}
                       className="border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 px-5 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
                     >
