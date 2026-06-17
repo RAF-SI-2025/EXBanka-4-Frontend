@@ -25,6 +25,8 @@ import BankAccountsPage from './pages/employee/BankAccountsPage'
 import AccountDetailPage from './pages/employee/AccountDetailPage'
 import NewAccountPage from './pages/employee/NewAccountPage'
 import ClientLoginPage from './pages/client/ClientLoginPage'
+import ClientForgotPasswordPage from './pages/client/ClientForgotPasswordPage'
+import ClientResetPasswordPage from './pages/client/ClientResetPasswordPage'
 import ClientActivatePage from './pages/client/ClientActivatePage'
 import ClientHomePage from './pages/client/ClientHomePage'
 import ClientAccountsOverviewPage from './pages/client/ClientAccountsOverviewPage'
@@ -88,6 +90,8 @@ import ClientPriceAlertsPage from './pages/client/ClientPriceAlertsPage'
 import AuditLogPage from './pages/employee/AuditLogPage'
 import RecurringOrdersPage from './pages/orders/RecurringOrdersPage'
 import ClientRecurringOrdersPage from './pages/client/ClientRecurringOrdersPage'
+import ClientAccountSettingsPage from './pages/client/ClientAccountSettingsPage'
+import ClientTotpSetupPage from './pages/client/ClientTotpSetupPage'
 
 function App() {
   return (
@@ -157,6 +161,8 @@ function App() {
 
           {/* Client portal — full-screen, no layout */}
           <Route path="/client/login" element={<ClientLoginPage />} />
+          <Route path="/client/forgot-password" element={<ClientForgotPasswordPage />} />
+          <Route path="/client/reset-password" element={<ClientResetPasswordPage />} />
           <Route path="/client/activate" element={<ClientActivatePage />} />
           <Route path="/client" element={<ClientHomePage />} />
           <Route path="/client/accounts" element={<ClientAccountsOverviewPage />} />
@@ -189,6 +195,8 @@ function App() {
           <Route path="/client/watchlists"          element={<ClientWatchlistPage />} />
           <Route path="/client/price-alerts"        element={<ClientPriceAlertsPage />} />
           <Route path="/client/recurring-orders"    element={<ClientRecurringOrdersPage />} />
+          <Route path="/client/settings/security"   element={<ClientAccountSettingsPage />} />
+          <Route path="/client/settings/totp"       element={<ClientTotpSetupPage />} />
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

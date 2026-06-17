@@ -80,6 +80,18 @@ export const clientAuthService = {
     clientTokenService.clear()
   },
 
+  async forgotPassword(email) {
+    await axios.post(`${BASE_URL}/client/forgot-password`, { email })
+  },
+
+  async resetPassword(token, password, confirmPassword) {
+    await axios.post(`${BASE_URL}/client/reset-password`, {
+      token,
+      password,
+      confirm_password: confirmPassword,
+    })
+  },
+
   /** Called on app load to restore a previous session from stored tokens. */
   restoreSession() {
     const token = clientTokenService.getAccessToken()

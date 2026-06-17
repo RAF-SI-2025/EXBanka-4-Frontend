@@ -187,7 +187,7 @@ export default function ClientLoginPage() {
                   Password
                 </label>
                 <Link
-                  to="/forgot-password"
+                  to="/client/forgot-password"
                   className="text-xs text-violet-600 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-300 transition-colors"
                 >
                   Forgot password?
@@ -237,7 +237,7 @@ export default function ClientLoginPage() {
                 {lockedUntil instanceof Date && (
                   <p>
                     Try again in {Math.max(1, Math.ceil((lockedUntil - Date.now()) / 60000))} minute(s) or{' '}
-                    <Link to="/forgot-password" className="underline hover:text-red-900 dark:hover:text-red-300">
+                    <Link to="/client/forgot-password" className="underline hover:text-red-900 dark:hover:text-red-300">
                       reset your password
                     </Link>{' '}
                     to unlock it immediately.

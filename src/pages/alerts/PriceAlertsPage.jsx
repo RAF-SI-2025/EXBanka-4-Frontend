@@ -152,7 +152,7 @@ export default function PriceAlertsPage() {
                           <p className="text-xs text-slate-400 py-1 text-center">No results.</p>
                         )}
                         {newResults.map((l) => (
-                          <button key={l.id} onClick={() => setNewListing(l)} className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-violet-50 dark:hover:bg-violet-900/20 text-left">
+                          <button key={l.id} onClick={() => { setNewListing(l); setNewThreshold(l.price != null ? String(l.price) : '') }} className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-violet-50 dark:hover:bg-violet-900/20 text-left">
                             <span className="font-mono text-sm text-violet-700 dark:text-violet-400 font-medium">{l.ticker}</span>
                             <span className="text-xs text-slate-500 ml-2 truncate">{l.name}</span>
                           </button>

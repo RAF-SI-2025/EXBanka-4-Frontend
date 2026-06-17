@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import useWindowTitle from '../hooks/useWindowTitle'
 import { notificationService } from '../services/notificationService'
 
@@ -91,6 +92,10 @@ export default function NotificationsPage() {
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
+            <Link to="/" className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 mb-3 transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
+              Back
+            </Link>
             <p className="text-xs tracking-widest uppercase text-violet-600 dark:text-violet-400 mb-1">Inbox</p>
             <h1 className="font-serif text-3xl font-light text-slate-900 dark:text-white">Notifications</h1>
           </div>
