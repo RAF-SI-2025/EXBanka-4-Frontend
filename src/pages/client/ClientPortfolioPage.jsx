@@ -325,7 +325,7 @@ export default function ClientPortfolioPage() {
     setDivError(null)
     try {
       const res = await clientDividendService.getMyDividends()
-      setDividends(Array.isArray(res) ? res : (res.dividends ?? res.payouts ?? []))
+      setDividends(Array.isArray(res) ? res : (res?.dividends ?? res?.payouts ?? []))
     } catch {
       setDivError(true)
     } finally {

@@ -99,7 +99,7 @@ export default function AuditLogPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-700">
-                    {['Vreme', 'Izvršio', 'Akcija', 'Cilj', 'Stara vrednost', 'Nova vrednost'].map((h) => (
+                    {['Time', 'Performed By', 'Action', 'Target', 'Old Value', 'New Value'].map((h) => (
                       <th key={h} className="px-4 py-4 text-left text-xs tracking-widest uppercase text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">{h}</th>
                     ))}
                   </tr>

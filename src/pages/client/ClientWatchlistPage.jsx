@@ -1,11 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ClientPortalLayout from '../../layouts/ClientPortalLayout'
+import useWindowTitle from '../../hooks/useWindowTitle'
 import { useApiError } from '../../context/ApiErrorContext'
 import { clientWatchlistService } from '../../services/watchlistService'
+import { clientSecuritiesService } from '../../services/clientSecuritiesService'
 import { fmt } from '../../utils/formatting'
 
+function formatAssetType(t) {
+  if (!t) return '—'
+  return t.toLowerCase().split('_').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ')
+}
+
 export default function ClientWatchlistPage() {
+  useWindowTitle('Watchlists | AnkaBanka')
   const navigate = useNavigate()
   const { addSuccess } = useApiError()
 
@@ -17,6 +25,14 @@ export default function ClientWatchlistPage() {
   const [showCreate, setShowCreate]   = useState(false)
   const [newName, setNewName]         = useState('')
   const [creating, setCreating]       = useState(false)
+
+  // Add security modal
+  const [addModal, setAddModal]           = useState(null) // watchlist id or null
+  const [addSearch, setAddSearch]         = useState('')
+  const [addResults, setAddResults]       = useState([])
+  const [addSearchLoading, setAddSearchLoading] = useState(false)
+  const [addBusy, setAddBusy]             = useState(false)
+  const searchTimeout                     = useRef(null)
 
   function load() {
     setLoading(true)
@@ -71,6 +87,38 @@ export default function ClientWatchlistPage() {
     } finally { setCreating(false) }
   }
 
+  function openAddModal(wlId) {
+    setAddModal(wlId)
+    setAddSearch('')
+    setAddResults([])
+  }
+
+  function handleAddSearch(val) {
+    setAddSearch(val)
+    clearTimeout(searchTimeout.current)
+    if (!val.trim()) { setAddResults([]); return }
+    setAddSearchLoading(true)
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const res = await clientSecuritiesService.getListings({ ticker: val.trim(), pageSize: 8 })
+        setAddResults(res.items ?? [])
+      } catch { setAddResults([]) }
+      finally { setAddSearchLoading(false) }
+    }, 350)
+  }
+
+  async function handleAddItem(listing) {
+    setAddBusy(true)
+    try {
+      await clientWatchlistService.addItem(addModal, listing.id)
+      const res = await clientWatchlistService.getItems(addModal)
+      setItems((p) => ({ ...p, [addModal]: Array.isArray(res) ? res : (res.items ?? []) }))
+      addSuccess(`${listing.ticker} added to watchlist.`)
+      setAddModal(null)
+    } catch { /* error toast */ }
+    finally { setAddBusy(false) }
+  }
+
   return (
     <ClientPortalLayout>
       <div className="p-6 max-w-5xl mx-auto">
@@ -82,6 +130,48 @@ export default function ClientWatchlistPage() {
           <button onClick={() => setShowCreate(true)} className="btn-primary text-xs px-4 py-2">+ New</button>
         </div>
 
+        {/* Add security modal */}
+        {addModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setAddModal(null)}>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <h2 className="font-serif text-lg font-light text-slate-900 dark:text-white">Add Security</h2>
+              </div>
+              <div className="px-6 py-5">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Search by ticker</label>
+                <input
+                  type="text"
+                  value={addSearch}
+                  onChange={(e) => handleAddSearch(e.target.value)}
+                  className="input-field w-full"
+                  placeholder="e.g. AAPL"
+                  autoFocus
+                />
+                <div className="mt-3 flex flex-col gap-1 max-h-52 overflow-y-auto">
+                  {addSearchLoading && <p className="text-xs text-slate-400 py-2 text-center">Searching…</p>}
+                  {!addSearchLoading && addResults.length === 0 && addSearch.trim() && (
+                    <p className="text-xs text-slate-400 py-2 text-center">No results.</p>
+                  )}
+                  {addResults.map((l) => (
+                    <button
+                      key={l.id}
+                      onClick={() => handleAddItem(l)}
+                      disabled={addBusy}
+                      className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-900/20 text-left transition-colors disabled:opacity-50"
+                    >
+                      <span className="font-mono font-medium text-sm text-violet-700 dark:text-violet-400">{l.ticker}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400 truncate ml-3">{l.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="px-6 pb-5 flex justify-end">
+                <button onClick={() => setAddModal(null)} className="text-xs px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors rounded">Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showCreate && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowCreate(false)}>
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
@@ -89,7 +179,8 @@ export default function ClientWatchlistPage() {
                 <h2 className="font-serif text-lg font-light text-slate-900 dark:text-white">New Watchlist</h2>
               </div>
               <div className="px-6 py-5">
-                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreate()} className="input-field w-full" placeholder="Name…" autoFocus />
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Name</label>
+                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreate()} className="input-field w-full" placeholder="e.g. Tech stocks" autoFocus />
               </div>
               <div className="px-6 pb-6 pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
                 <button onClick={() => setShowCreate(false)} className="text-xs px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
@@ -121,12 +212,15 @@ export default function ClientWatchlistPage() {
                     {loadingItems[wl.id] ? (
                       <div className="px-5 py-4 text-sm text-slate-400">Loading…</div>
                     ) : (items[wl.id] ?? []).length === 0 ? (
-                      <div className="px-5 py-4 text-sm text-slate-400">No items.</div>
+                      <div className="px-5 py-4 flex items-center justify-between">
+                        <span className="text-sm text-slate-400">No items.</span>
+                        <button onClick={() => openAddModal(wl.id)} className="text-xs text-violet-600 dark:text-violet-400 hover:underline">+ Add Security</button>
+                      </div>
                     ) : (
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-slate-100 dark:border-slate-800">
-                            {['Ticker', 'Name', 'Price', 'Change', ''].map((h) => (
+                            {['Ticker', 'Name', 'Type', 'Price', 'Change', 'Volume', ''].map((h) => (
                               <th key={h} className="px-4 py-3 text-left text-xs tracking-widests uppercase text-slate-500 dark:text-slate-400 font-medium">{h}</th>
                             ))}
                           </tr>
@@ -138,10 +232,14 @@ export default function ClientWatchlistPage() {
                               <tr key={item.id ?? item.listing_id} className={`border-b border-slate-100 dark:border-slate-800 last:border-0 ${i % 2 === 0 ? '' : 'bg-slate-50/50 dark:bg-slate-800/20'}`}>
                                 <td className="px-4 py-3 font-mono font-medium text-violet-600 dark:text-violet-400 cursor-pointer hover:underline" onClick={() => navigate(`/client/securities/${item.listing_id}`)}>{item.ticker ?? '—'}</td>
                                 <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{item.name ?? '—'}</td>
+                                <td className="px-4 py-3">
+                                  <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs px-1.5 py-0.5 rounded font-mono">{formatAssetType(item.asset_type)}</span>
+                                </td>
                                 <td className="px-4 py-3 tabular-nums text-slate-700 dark:text-slate-300">{item.price != null ? fmt(item.price) : '—'}</td>
                                 <td className={`px-4 py-3 tabular-nums font-medium ${changePct == null ? '' : changePct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
                                   {changePct != null ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%` : '—'}
                                 </td>
+                                <td className="px-4 py-3 tabular-nums text-slate-600 dark:text-slate-400">{item.volume ?? '—'}</td>
                                 <td className="px-4 py-3">
                                   <button onClick={() => handleRemoveItem(wl.id, item.listing_id)} className="text-xs text-red-500 hover:text-red-600 transition-colors">Remove</button>
                                 </td>
@@ -150,6 +248,11 @@ export default function ClientWatchlistPage() {
                           })}
                         </tbody>
                       </table>
+                    )}
+                    {!loadingItems[wl.id] && (items[wl.id] ?? []).length > 0 && (
+                      <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                        <button onClick={() => openAddModal(wl.id)} className="text-xs text-violet-600 dark:text-violet-400 hover:underline">+ Add Security</button>
+                      </div>
                     )}
                   </div>
                 )}

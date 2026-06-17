@@ -6,6 +6,11 @@ import { watchlistService } from '../../services/watchlistService'
 import { securitiesService } from '../../services/securitiesService'
 import { fmt } from '../../utils/formatting'
 
+function formatAssetType(t) {
+  if (!t) return '—'
+  return t.toLowerCase().split('_').map((w) => w[0].toUpperCase() + w.slice(1)).join(' ')
+}
+
 export default function WatchlistPage() {
   useWindowTitle('Watchlists | AnkaBanka')
   const navigate = useNavigate()
@@ -197,7 +202,7 @@ export default function WatchlistPage() {
                   onChange={(e) => setNewName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                   className="input-field w-full"
-                  placeholder="npr. Tech stocks"
+                  placeholder="e.g. Tech stocks"
                   autoFocus
                 />
               </div>
@@ -267,7 +272,7 @@ export default function WatchlistPage() {
                                 </td>
                                 <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{item.name ?? '—'}</td>
                                 <td className="px-4 py-3">
-                                  <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs px-1.5 py-0.5 rounded font-mono">{item.type ?? '—'}</span>
+                                  <span className="bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs px-1.5 py-0.5 rounded font-mono">{formatAssetType(item.asset_type)}</span>
                                 </td>
                                 <td className="px-4 py-3 tabular-nums text-slate-700 dark:text-slate-300">{item.price != null ? fmt(item.price) : '—'}</td>
                                 <td className={`px-4 py-3 tabular-nums font-medium ${changePct == null ? '' : changePct >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
