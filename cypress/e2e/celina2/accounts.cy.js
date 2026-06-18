@@ -5,7 +5,7 @@
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
-const CLIENT_EMAIL = 'ddimitrijevi822rn@raf.rs'
+const CLIENT_EMAIL = 'dunja@banka.rs'
 
 function selectClientByEmail(email) {
   cy.get('select[name="ownerId"] option')

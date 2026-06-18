@@ -7,7 +7,7 @@ const EMPLOYEE_EMAIL    = 'admin@exbanka.com'
 const EMPLOYEE_PASSWORD = 'admin'
 
 // A client known to exist in the DB
-const KNOWN_CLIENT_EMAIL = 'ddimitrijevi822rn@raf.rs'
+const KNOWN_CLIENT_EMAIL = 'dunja@banka.rs'
 
 describe('Portal za upravljanje klijentima — zaposleni', () => {
 
