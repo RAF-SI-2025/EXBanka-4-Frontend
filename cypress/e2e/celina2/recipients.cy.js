@@ -3,7 +3,7 @@
  * Scenarios: 21–23
  */
 
-const CLIENT_EMAIL    = 'ddimitrijevi822rn@raf.rs'
+const CLIENT_EMAIL    = 'dunja@banka.rs'
 const CLIENT_PASSWORD = 'taraDunjic123'
 const API_BASE        = 'http://localhost:8083'
 
