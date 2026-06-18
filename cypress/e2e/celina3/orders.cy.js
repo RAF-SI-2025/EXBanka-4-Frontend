@@ -8,7 +8,7 @@ const ADMIN_EMAIL = 'admin@exbanka.com'
 const ADMIN_PASS = 'admin'
 const AGENT_EMAIL = 'elezovic@banka.rs'
 const AGENT_PASS = 'denis123'
-const CLIENT_EMAIL = 'ddimitrijevi822rn@raf.rs'
+const CLIENT_EMAIL = 'dunja@banka.rs'
 const CLIENT_PASS = 'taraDunjic123'
 
 function loginAs(email, pass) {

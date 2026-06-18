@@ -4,7 +4,7 @@
  */
 
 const API_BASE            = 'http://localhost:8083'
-const CLIENT_EMAIL        = 'ddimitrijevi822rn@raf.rs'
+const CLIENT_EMAIL        = 'dunja@banka.rs'
 const CLIENT_PASS         = 'taraDunjic123'
 const SUPERVISOR_EMAIL    = 'vasa@banka.rs'
 const SUPERVISOR_PASS     = 'vasilije123'
